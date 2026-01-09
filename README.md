@@ -19,7 +19,7 @@ We plan to take advantage of pre-trained transformer models as a starting point.
 The dataset used in this project is the **[Fake vs Real Job Postings (Synthetic NLP Dataset)](https://www.kaggle.com/datasets/khushikyad001/fake-vs-real-job-postings-synthetic-nlp-dataset/data)** from Kaggle. It consists of approximately 3,000 synthetic job postings with a total of 25 features. Each sample includes text fields such as job descriptions and requirements, as well as categorical and numerical features. The dataset also contains missing values.
 
 ## Models
-We expect to work mainly with pre-trained transformer-based models* for text classification. Depending on time constraints, we may experiment with lighter or more optimized variants to reduce training and inference time.
+We expect to work mainly with pre-trained transformer-based models for text classification. Depending on time constraints, we may experiment with lighter or more optimized variants to reduce training and inference time.
 
 ## Project structure
 
