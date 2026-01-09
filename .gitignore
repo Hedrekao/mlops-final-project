@@ -2,6 +2,8 @@ docs/site/
 
 # test cache
 manual_test/
+models/checkpoints
+outputs/
 
 # other local dev info
 .vscode/
