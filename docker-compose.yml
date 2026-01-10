@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: dockerfiles/api.dockerfile
+    container_name: postings-classifier-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./configs:/app/configs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  train:
+    build:
+      context: .
+      dockerfile: dockerfiles/train.dockerfile
+    container_name: postings-classifier-train
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./configs:/app/configs
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Set to true to run training on startup, false to only build the image
+    profiles: ["training"]
