@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer
 import lightning as L
+from loguru import logger
 
 
 class JobPostingsDataset(Dataset):
@@ -69,7 +70,7 @@ class JobPostingsDataModule(L.LightningDataModule):
 
     def _preprocess_and_save(self) -> None:
         """Preprocess raw data and save as tensors."""
-        print("Preprocessing data...")
+        logger.info("Preprocessing data from {}", self.raw_path)
         df = pd.read_csv(self.raw_path)
 
         texts = (
@@ -117,8 +118,8 @@ class JobPostingsDataModule(L.LightningDataModule):
         torch.save(attention_mask[test_idx], self.processed_path / "test_attention_mask.pt")
         torch.save(labels_tensor[test_idx], self.processed_path / "test_labels.pt")
 
-        print(f"Saved processed data to {self.processed_path}")
-        print(f"Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
+        logger.info("Saved processed data to {}", self.processed_path)
+        logger.info("Splits -> Train: {}, Val: {}, Test: {}", len(train_idx), len(val_idx), len(test_idx))
 
     def setup(self, stage: str | None = None) -> None:
         if stage == "train" or stage is None:
@@ -172,6 +173,6 @@ if __name__ == "__main__":
     dm = JobPostingsDataModule()
     dm.prepare_data()
     dm.setup()
-    print(f"Train batches: {len(dm.train_dataloader())}")
-    print(f"Val batches: {len(dm.val_dataloader())}")
-    print(f"Test batches: {len(dm.test_dataloader())}")
+    logger.info("Train batches: {}", len(dm.train_dataloader()))
+    logger.info("Val batches: {}", len(dm.val_dataloader()))
+    logger.info("Test batches: {}", len(dm.test_dataloader()))

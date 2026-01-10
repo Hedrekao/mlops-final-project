@@ -185,3 +185,4 @@ profiling/
 **/metrics.csv
 models/lightning_logs/**
 events.out.tfevents*
+logs/

@@ -6,7 +6,7 @@ enable_progress_bar: true
 enable_checkpointing: true
 default_root_dir: "models"
 early_stopping_patience: 2
-profiler: "pytorch"  # always on; set to null to disable
+profiler: null  # set to "pytorch" to enable PyTorch Profiler
 profiler_dir: "profiling"
 profiler_filename: "run"
 profiler_trace_dir: "profiling/traces"
