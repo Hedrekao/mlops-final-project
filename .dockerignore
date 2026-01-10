@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+docs/site
+mkdocs.yaml
+
+# Notebooks
+notebooks/
+
+# Temporary files
+*.tmp
+*.log
+.tmp/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# Reports
+reports/figures/
+
+# Environment
+.env
+.env.local
