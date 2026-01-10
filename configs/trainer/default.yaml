@@ -6,3 +6,12 @@ enable_progress_bar: true
 enable_checkpointing: true
 default_root_dir: "models"
 early_stopping_patience: 2
+profiler: "pytorch"  # always on; set to null to disable
+profiler_dir: "profiling"
+profiler_filename: "run"
+profiler_trace_dir: "profiling/traces"
+profiler_record_memory: false
+profiler_wait: 0
+profiler_warmup: 5
+profiler_active: 50   # capture a small window to avoid OOM
+profiler_repeat: 1
