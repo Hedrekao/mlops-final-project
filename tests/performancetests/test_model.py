@@ -30,9 +30,7 @@ def load_model(artifact_name: str | None = None, logdir: str | None = None) -> J
     if files:
         ckpt_path = os.path.join(artifact_dir, files[0].name)
     else:
-        matches = glob.glob(os.path.join(artifact_dir, "*.ckpt")) + glob.glob(
-            os.path.join(artifact_dir, "*.pt")
-        )
+        matches = glob.glob(os.path.join(artifact_dir, "*.ckpt")) + glob.glob(os.path.join(artifact_dir, "*.pt"))
         if not matches:
             raise RuntimeError("No checkpoint file found in artifact")
         ckpt_path = matches[0]

@@ -139,7 +139,7 @@ class JobPostingsClassifier(L.LightningModule):
             }
 
         return {"optimizer": optimizer}
-    
+
     def load_from_checkpoint(  # type: ignore[override]
         cls,
         checkpoint_path: str,
@@ -167,8 +167,12 @@ class JobPostingsClassifier(L.LightningModule):
         chk = torch.load(checkpoint_path, map_location=map_location)
 
         # Lightning-style checkpoint: delegate to Lightning loader
-        if isinstance(chk, dict) and ("hyper_parameters" in chk or "hparams" in chk or "state_dict" in chk and "hyper_parameters" in chk):
-            return super(JobPostingsClassifier, cls).load_from_checkpoint(checkpoint_path, map_location=map_location, **kwargs)
+        if isinstance(chk, dict) and (
+            "hyper_parameters" in chk or "hparams" in chk or "state_dict" in chk and "hyper_parameters" in chk
+        ):
+            return super(JobPostingsClassifier, cls).load_from_checkpoint(
+                checkpoint_path, map_location=map_location, **kwargs
+            )
 
         # Plain state_dict or dict containing state_dict
         state_dict = chk.get("state_dict", chk) if isinstance(chk, dict) else chk
