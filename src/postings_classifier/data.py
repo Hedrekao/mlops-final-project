@@ -15,9 +15,11 @@ class JobPostingsDataset(Dataset):
         self.labels = labels
 
     def __len__(self) -> int:
-        return len(self.labels)
+        """Return the number of samples in the dataset."""
+        return int(self.labels.size(0))
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        """Return a single sample as a dict of tensors."""
         return {
             "input_ids": self.input_ids[index],
             "attention_mask": self.attention_mask[index],
