@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 
 class TextIn(BaseModel):
-	text: str
+    text: str
 
 
 app = FastAPI(title="Postings Classifier (dummy)")
@@ -20,26 +20,25 @@ app = FastAPI(title="Postings Classifier (dummy)")
 
 @app.get("/health")
 def health() -> Dict[str, str]:
-	"""Health check endpoint."""
-	return {"status": "ok"}
+    """Health check endpoint."""
+    return {"status": "ok"}
 
 
 @app.post("/predict")
 def predict(payload: TextIn) -> Dict[str, object]:
-	"""Return a simple rule-based dummy prediction.
+    """Return a simple rule-based dummy prediction.
 
-	If the input text contains the word "fake" (case-insensitive) the
-	model returns label "fake"; otherwise "real". This keeps the endpoint
-	usable for smoke-tests without requiring a trained model.
-	"""
-	text = payload.text or ""
-	lower = text.lower()
-	if "fake" in lower:
-		label = "fake"
-		score = 0.99
-	else:
-		label = "real"
-		score = 0.75
+    If the input text contains the word "fake" (case-insensitive) the
+    model returns label "fake"; otherwise "real". This keeps the endpoint
+    usable for smoke-tests without requiring a trained model.
+    """
+    text = payload.text or ""
+    lower = text.lower()
+    if "fake" in lower:
+        label = "fake"
+        score = 0.99
+    else:
+        label = "real"
+        score = 0.75
 
-	return {"label": label, "score": score, "text": payload.text}
-
+    return {"label": label, "score": score, "text": payload.text}

@@ -4,8 +4,8 @@ import lightning as L
 from transformers import AutoModel, get_linear_schedule_with_warmup
 from torchmetrics.classification import BinaryAccuracy, BinaryF1Score
 
-class JobPostingsClassifier(L.LightningModule):
 
+class JobPostingsClassifier(L.LightningModule):
     def __init__(
         self,
         model_name: str = "distilbert-base-uncased",
