@@ -1,14 +1,64 @@
+from pathlib import Path
+
 import hydra
+from loguru import logger
 from omegaconf import DictConfig
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+from lightning.pytorch.profilers import AdvancedProfiler, PyTorchProfiler
+from torch.profiler import ProfilerActivity, schedule, tensorboard_trace_handler
 
 from postings_classifier.data import JobPostingsDataModule
+from postings_classifier.logging_utils import log_config, setup_logging
 from postings_classifier.model import JobPostingsClassifier
+
+
+def _build_profiler(cfg: DictConfig) -> AdvancedProfiler | PyTorchProfiler | None:
+    """Create a Lightning profiler based on config."""
+    profiler_type = cfg.trainer.profiler
+    if profiler_type is None:
+        return None
+
+    profile_dir = cfg.trainer.profiler_dir
+    profile_filename = cfg.trainer.profiler_filename
+
+    Path(profile_dir).mkdir(parents=True, exist_ok=True)
+
+    if profiler_type == "advanced":
+        return AdvancedProfiler(dirpath=profile_dir, filename=f"{profile_filename}.txt")
+
+    if profiler_type == "pytorch":
+        activities = [ProfilerActivity.CPU]
+        if str(cfg.trainer.accelerator).lower() in {"gpu", "cuda"}:
+            activities.append(ProfilerActivity.CUDA)
+
+        trace_dir = cfg.trainer.profiler_trace_dir
+        if trace_dir:
+            Path(trace_dir).mkdir(parents=True, exist_ok=True)
+        on_trace_ready = tensorboard_trace_handler(trace_dir) if trace_dir else None
+
+        return PyTorchProfiler(
+            dirpath=profile_dir,
+            filename=profile_filename,
+            schedule=schedule(
+                wait=cfg.trainer.profiler_wait,
+                warmup=cfg.trainer.profiler_warmup,
+                active=cfg.trainer.profiler_active,
+                repeat=cfg.trainer.profiler_repeat,
+            ),
+            record_memory=cfg.trainer.profiler_record_memory,
+            activities=activities,
+            on_trace_ready=on_trace_ready,
+        )
+
+    raise ValueError(f"Unsupported profiler type: {profiler_type}")
 
 
 @hydra.main(config_path="../../configs", config_name="config", version_base=None)
 def train(cfg: DictConfig) -> float:
+    setup_logging(level="INFO")
+    log_config(cfg)
+
     L.seed_everything(cfg.seed)
 
     datamodule = JobPostingsDataModule(
@@ -24,7 +74,18 @@ def train(cfg: DictConfig) -> float:
     )
 
     datamodule.prepare_data()
-    datamodule.setup(stage="train")
+    datamodule.setup(stage=None)
+
+    train_batches = len(datamodule.train_dataloader())
+    val_batches = len(datamodule.val_dataloader())
+    test_batches = len(datamodule.test_dataloader())
+
+    logger.info(
+        "Data prepared. Train/Val/Test batches: {}/{}/{}",
+        train_batches,
+        val_batches,
+        test_batches,
+    )
 
     total_steps = len(datamodule.train_dataloader()) * cfg.trainer.max_epochs
 
@@ -56,6 +117,8 @@ def train(cfg: DictConfig) -> float:
 
     callbacks = [checkpoint_callback, early_stopping_callback]
 
+    profiler = _build_profiler(cfg)
+
     trainer = L.Trainer(
         max_epochs=cfg.trainer.max_epochs,
         accelerator=cfg.trainer.accelerator,
@@ -65,17 +128,22 @@ def train(cfg: DictConfig) -> float:
         enable_checkpointing=cfg.trainer.enable_checkpointing,
         default_root_dir=cfg.trainer.default_root_dir,
         callbacks=callbacks,
+        profiler=profiler,
     )
 
+    logger.info("Starting training for {} epochs", cfg.trainer.max_epochs)
     trainer.fit(model, datamodule=datamodule)
 
-    print("\n--- Testing best model ---")
+    logger.info("Testing best model")
     datamodule.setup(stage="test")
     trainer.test(model, datamodule=datamodule, ckpt_path="best")
 
-    print(f"\nBest model saved to: {checkpoint_callback.best_model_path}")
+    logger.info("Best model saved to: {}", checkpoint_callback.best_model_path)
     last_path = checkpoint_callback.last_model_path
-    print(f"Last model saved to: {last_path if last_path else 'N/A (best checkpoint is from final epoch)'}")
+    logger.info(
+        "Last model saved to: {}",
+        last_path if last_path else "N/A (best checkpoint is from final epoch)",
+    )
 
     val_acc = trainer.callback_metrics.get("val_acc", 0.0)
     return val_acc.item() if hasattr(val_acc, "item") else val_acc

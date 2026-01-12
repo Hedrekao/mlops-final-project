@@ -3,6 +3,7 @@ docs/site/
 # test cache
 manual_test/
 models/checkpoints
+models/lightning_logs/
 outputs/
 
 # other local dev info
@@ -177,3 +178,11 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Profiling and hyperparameter files
+**/hparams.yaml
+profiling/
+**/metrics.csv
+models/lightning_logs/**
+events.out.tfevents*
+logs/
