@@ -13,6 +13,10 @@ jobs:
         fail-fast: false
         operating-system: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: ["3.12", "3.11"]
+        # Optional PyTorch matrix axis: use `cpu-default` to skip installing
+        # an explicit torch wheel (use uv-managed dependencies). Add explicit
+        # versions to test multiple torch releases (M17 requirement).
+        pytorch-version: ["cpu-default", "2.2.0"]
 
     steps:
       - name: Checkout code
@@ -28,6 +32,12 @@ jobs:
         run: |
           uv sync --locked --dev
           uv tree
+
+      - name: Install optional PyTorch
+        if: matrix.pytorch-version != 'cpu-default'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "torch==${{ matrix.pytorch-version }}" --index-url https://download.pytorch.org/whl/cpu
 
       - name: Run tests & coverage
         run: |
