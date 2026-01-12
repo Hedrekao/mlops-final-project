@@ -1,7 +1,8 @@
 import torch
 from torch import nn
 import lightning as L
-from transformers import AutoModel, get_linear_schedule_with_warmup
+import Dict
+from transformers import Any, AutoModel, Optional, get_linear_schedule_with_warmup
 from torchmetrics.classification import BinaryAccuracy, BinaryF1Score
 
 
@@ -138,6 +139,47 @@ class JobPostingsClassifier(L.LightningModule):
             }
 
         return {"optimizer": optimizer}
+    
+    def load_from_checkpoint(  # type: ignore[override]
+        cls,
+        checkpoint_path: str,
+        map_location: Optional[str] = "cpu",
+        strict: bool = True,
+        **kwargs: Any,
+    ) -> "JobPostingsClassifier":
+        """Load a JobPostingsClassifier from a checkpoint.
+
+        This method is tolerant to different checkpoint formats:
+        - If the checkpoint is a Lightning checkpoint (contains hyper-parameters),
+          delegate to Lightning's load_from_checkpoint.
+        - If the checkpoint is a plain state_dict or contains only "state_dict",
+          construct the model from saved hyperparameters if available and load the state dict.
+
+        Args:
+            checkpoint_path: Path to the checkpoint file.
+            map_location: Map location for torch.load (default: "cpu").
+            strict: Passed to load_state_dict when loading a plain state dict.
+            **kwargs: Extra kwargs forwarded to Lightning loader.
+
+        Returns:
+            Instantiated JobPostingsClassifier with weights loaded.
+        """
+        chk = torch.load(checkpoint_path, map_location=map_location)
+
+        # Lightning-style checkpoint: delegate to Lightning loader
+        if isinstance(chk, dict) and ("hyper_parameters" in chk or "hparams" in chk or "state_dict" in chk and "hyper_parameters" in chk):
+            return super(JobPostingsClassifier, cls).load_from_checkpoint(checkpoint_path, map_location=map_location, **kwargs)
+
+        # Plain state_dict or dict containing state_dict
+        state_dict = chk.get("state_dict", chk) if isinstance(chk, dict) else chk
+        saved_hparams: Dict[str, Any] = {}
+        if isinstance(chk, dict):
+            saved_hparams = chk.get("hparams", {}) or chk.get("hyper_parameters", {}) or {}
+
+        # Construct model with saved hyperparameters where possible
+        model = cls(**{**saved_hparams})
+        model.load_state_dict(state_dict, strict=strict)
+        return model
 
 
 if __name__ == "__main__":
