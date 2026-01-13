@@ -1,4 +1,5 @@
 """Logging utilities for the postings classifier project."""
+
 from pathlib import Path
 from typing import Any
 

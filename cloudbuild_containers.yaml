@@ -1,0 +1,65 @@
+steps:
+  # Build training image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:latest'
+      - '-f'
+      - 'dockerfiles/train.dockerfile'
+      - '.'
+    id: 'build-train'
+
+  # Build API image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:latest'
+      - '-f'
+      - 'dockerfiles/api.dockerfile'
+      - '.'
+    id: 'build-api'
+
+  # Push training image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
+    id: 'push-train'
+    waitFor: ['build-train']
+
+  # Push training image (latest tag)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:latest'
+    waitFor: ['build-train']
+
+  # Push API image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
+    id: 'push-api'
+    waitFor: ['build-api']
+
+  # Push API image (latest tag)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:latest'
+    waitFor: ['build-api']
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:latest'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

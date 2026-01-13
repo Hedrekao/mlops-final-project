@@ -2,33 +2,26 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    g++ \
-    python3-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install uv
+RUN pip install --no-cache-dir uv
 
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir uv
+# Copy dependency files
+COPY uv.lock pyproject.toml ./
 
-COPY uv.lock uv.lock
-COPY pyproject.toml pyproject.toml
+# Install dependencies
+RUN uv sync --frozen --no-install-project --no-dev
 
-RUN uv sync --frozen --no-install-project
-
+# Copy source code
 COPY src src/
 COPY configs configs/
-COPY README.md README.md
-COPY LICENSE LICENSE
+COPY README.md LICENSE ./
 
-RUN uv sync --frozen
+# Install project
+RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+  CMD uv run python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-ENTRYPOINT ["uv", "run", "uvicorn", "src.postings_classifier.api:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["uv", "run", "uvicorn", "postings_classifier.api:app", "--host", "0.0.0.0", "--port", "8000"]
