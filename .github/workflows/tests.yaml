@@ -9,8 +9,8 @@ jobs:
   test:
     runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       matrix:
-        fail-fast: false
         operating-system: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: ["3.12", "3.11"]
         # Optional PyTorch matrix axis: use `cpu-default` to skip installing
@@ -34,13 +34,9 @@ jobs:
           uv tree
 
       - name: Install PyTorch (CPU wheel)
+        if: matrix.pytorch-version != 'cpu-default'
         run: |
-          uv run pip install "torch==${{ matrix.pytorch }}" --index-url https://download.pytorch.org/whl/cpu || true
-
-      - name: Lint (ruff)
-        run: |
-          uv run ruff check . --fix || true
-          uv run ruff format .
+          uv run pip install "torch==${{ matrix.pytorch-version }}" --index-url https://download.pytorch.org/whl/cpu
 
       - name: Run tests & coverage
         run: |
