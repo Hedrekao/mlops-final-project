@@ -5,6 +5,7 @@ that accepts a short piece of text and returns a dummy prediction. The
 implementation avoids heavy imports at module import time so the container
 can build even before optional ML dependencies are available.
 """
+
 from typing import Dict
 
 from fastapi import FastAPI

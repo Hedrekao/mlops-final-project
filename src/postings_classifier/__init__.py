@@ -1,4 +1,5 @@
 """Package metadata and defaults for postings_classifier."""
+
 from pathlib import Path
 
 # Default locations used across the package and tests
