@@ -2,9 +2,10 @@ name: Unit Tests
 
 on:
   push:
-    branches: [main, '**']
+    branches: [main]
   pull_request:
-    branches: [main, '**']
+    branches: [main]
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ${{ matrix.operating-system }}
