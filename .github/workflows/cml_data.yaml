@@ -60,5 +60,5 @@ jobs:
         run: |
           echo "## Dataset Statistics Report" > report.md
           echo "" >> report.md
-          uv run python scripts/dataset_statistics.py 2>&1 | grep -A 100 "DATASET STATISTICS" >> report.md || true
+          uv run python scripts/dataset_statistics.py --markdown >> report.md
           cml comment create report.md --watermark-title="Data Validation"

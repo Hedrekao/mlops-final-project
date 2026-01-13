@@ -1,5 +1,4 @@
-"""Script to compute and report dataset statistics for CI/CD data validation."""
-
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -66,6 +65,36 @@ def print_statistics_report(stats: dict) -> None:
     logger.info("=" * 60)
 
 
+def print_markdown_report(stats: dict) -> None:
+    """
+    Print a markdown-formatted statistics report.
+
+    Args:
+        stats: Dictionary containing dataset statistics
+    """
+    print("### Dataset Overview")
+    print(f"- **Total samples**: {stats['total_samples']}")
+    print(f"- **Number of features**: {stats['num_features']}")
+    print()
+    print("### Class Distribution")
+    print(f"- **Legitimate postings**: {stats['legitimate_count']}")
+    print(f"- **Fraudulent postings**: {stats['fraudulent_count']}")
+    print(f"- **Fraudulent percentage**: {stats['fraudulent_percentage']:.2f}%")
+    print()
+    print("### Data Quality")
+    print(f"- **Total missing values**: {stats['total_missing']}")
+
+    if stats["total_missing"] > 0:
+        print()
+        print("**Missing values by column:**")
+        print()
+        print("| Column | Missing Count |")
+        print("|--------|---------------|")
+        for col, count in stats["missing_values"].items():
+            if count > 0:
+                print(f"| {col} | {count} |")
+
+
 def validate_dataset(stats: dict) -> bool:
     """
     Validate dataset meets quality requirements.
@@ -101,8 +130,15 @@ def validate_dataset(stats: dict) -> bool:
 
 
 if __name__ == "__main__":
+    markdown_mode = "--markdown" in sys.argv
+
     stats = compute_dataset_statistics()
-    print_statistics_report(stats)
+
+    if markdown_mode:
+        print_markdown_report(stats)
+    else:
+        print_statistics_report(stats)
+
     validation_passed = validate_dataset(stats)
 
     if not validation_passed:
