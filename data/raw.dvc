@@ -1,0 +1,11 @@
+outs:
+- hash: md5
+  path: raw
+  files:
+  - relpath: fake_real_job_postings_3000x25.csv
+    md5: 699be6dac5d6f3706e84d68b77997149
+    size: 3437528
+    cloud:
+      remote_storage:
+        etag: 08cea49bd5cc8892031001
+        version_id: '1768310155170382'
