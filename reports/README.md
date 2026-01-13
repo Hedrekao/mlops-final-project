@@ -217,7 +217,7 @@ The test suite contains five focused tests covering data, model, and API. Data t
 >
 > Recommended answer length: 100-200 words.
 >
-The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests. 
+The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests.
 
 ### Question 9
 
@@ -230,7 +230,7 @@ The total code coverage of code is 58%, which includes all our source code apart
 > *We made use of both branches and PRs in our project. In our group, each member had an branch that they worked on in*
 > *addition to the main branch. To merge code we ...*
 >
-> Answer:> *We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed. 
+> Answer:> *We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed.
 
 
 ### Question 10

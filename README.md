@@ -89,4 +89,3 @@ uv run pytest tests/
 ```powershell
 uv run coverage report -m
 ```
-

@@ -4,6 +4,7 @@ import time
 import tempfile
 import glob
 import torch
+import pytest
 from postings_classifier.model import JobPostingsClassifier
 
 
@@ -38,6 +39,10 @@ def load_model(artifact_name: str | None = None, logdir: str | None = None) -> J
     return JobPostingsClassifier.load_from_checkpoint(ckpt_path)
 
 
+@pytest.mark.skipif(
+    not os.getenv("MODEL_NAME") or not os.getenv("WANDB_API_KEY"),
+    reason="MODEL_NAME and WANDB_API_KEY environment variables required for performance tests",
+)
 def test_model_speed():
     model = load_model(os.getenv("MODEL_NAME"))
     start = time.time()
