@@ -72,3 +72,21 @@ The directory structure of the project looks like this:
 Created using [mlops_template](https://github.com/SkafteNicki/mlops_template),
 a [cookiecutter template](https://github.com/cookiecutter/cookiecutter) for getting
 started with Machine Learning Operations (MLOps).
+
+
+## Running tests and coverage
+
+Use the project's `uv` wrapper to run tests and print a coverage report.
+
+- Run the test suite for the `tests/` folder:
+
+```powershell
+uv run pytest tests/
+```
+
+- Generate a coverage report (requires `coverage` to be installed in the environment):
+
+```powershell
+uv run coverage report -m
+```
+

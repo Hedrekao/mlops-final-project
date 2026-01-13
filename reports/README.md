@@ -121,9 +121,9 @@ will check the repositories and the code to verify your answers.
 ### Question 1
 > **Enter the group number you signed up on <learn.inside.dtu.dk>**
 >
-> Answer:
+> Answer: 103
 
---- question 1 fill here ---
+
 
 ### Question 2
 > **Enter the study number for each member in the group**
@@ -132,9 +132,8 @@ will check the repositories and the code to verify your answers.
 >
 > *sXXXXXX, sXXXXXX, sXXXXXX*
 >
-> Answer:
+> Answer: s250695,
 
---- question 2 fill here ---
 
 ### Question 3
 > **Did you end up using any open-source frameworks/packages not covered in the course during your project? If so**
@@ -163,12 +162,10 @@ will check the repositories and the code to verify your answers.
 > Recommended answer length: 100-200 words
 >
 > Example:
-> *We used ... for managing our dependencies. The list of dependencies was auto-generated using ... . To get a*
-> *complete copy of our development environment, one would have to run the following commands*
+> *We used uv for managing our dependencies. The list of dependencies was auto-generated using pyproject.toml . To get a complete copy of our development environment, one would have to run the following commands*
 >
-> Answer:
+> Answer: uv sync
 
---- question 4 fill here ---
 
 ### Question 5
 
@@ -209,16 +206,9 @@ will check the repositories and the code to verify your answers.
 ### Question 7
 
 > **How many tests did you implement and what are they testing in your code?**
->
-> Recommended answer length: 50-100 words.
->
-> Example:
-> *In total we have implemented X tests. Primarily we are testing ... and ... as these the most critical parts of our*
-> *application but also ... .*
->
-> Answer:
 
---- question 7 fill here ---
+The test suite contains five focused tests covering data, model, and API. Data tests validate the dataset and datamodule load preprocessed tensors, correct lengths, tensor shapes, and dtypes. Model tests verify model construction, a forward pass, and a single optimization step to ensure training paths work. API tests exercise key endpoints (responses and status codes) to catch integration regressions. Together they provide smoke-level coverage of critical pipelines.
+
 
 ### Question 8
 
@@ -227,13 +217,7 @@ will check the repositories and the code to verify your answers.
 >
 > Recommended answer length: 100-200 words.
 >
-> Example:
-> *The total code coverage of code is X%, which includes all our source code. We are far from 100% coverage of our **
-> *code and even if we were then...*
->
-> Answer:
-
---- question 8 fill here ---
+The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests. 
 
 ### Question 9
 
@@ -246,9 +230,8 @@ will check the repositories and the code to verify your answers.
 > *We made use of both branches and PRs in our project. In our group, each member had an branch that they worked on in*
 > *addition to the main branch. To merge code we ...*
 >
-> Answer:
+> Answer:> *We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed. 
 
---- question 9 fill here ---
 
 ### Question 10
 
@@ -279,8 +262,13 @@ will check the repositories and the code to verify your answers.
 > *here: <weblink>*
 >
 > Answer:
+We run continuous integration on GitHub Actions and have separated responsibilities across jobs to keep feedback fast and actionable. CI covers: unit testing (uv run pytest tests/), linting and formatting (uv run ruff check . --fix and uv run ruff format .), and pre-commit hooks (uv run pre-commit run --all-files). Workflows are triggered on pull requests and pushes to main; branch-protection requires passing CI and at least one review before merge. Tests and linters run in a matrix across operating systems (ubuntu-latest, windows-latest, macos-latest) and multiple Python versions (3.9–3.11) to catch platform-specific issues.
 
---- question 11 fill here ---
+Dependency installation uses the project’s uv-managed environment (uv sync / uv install) so CI mirrors local developer environments; the uv.lock file is used to pin versions. We enable caching (actions/cache) for the pip/venv cache keyed by python-version and the uv.lock hash to speed runs and reduce network overhead. Build artifacts such as test coverage reports are uploaded as job artifacts; coverage is produced during pytest runs and used for monitoring test health over time.
+
+Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit is executed to keep commits clean. Additional jobs include docs build checks (uv run mkdocs build) and an optional Docker image build for deployment testing. See .github/workflows/ci.yml for the CI implementation and workflow details.
+
+
 
 ## Running code and tracking experiments
 
