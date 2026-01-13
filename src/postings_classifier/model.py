@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 import lightning as L
-import Dict
-from transformers import Any, AutoModel, Optional, get_linear_schedule_with_warmup
+from typing import Any, Dict, Optional
+from transformers import AutoModel, get_linear_schedule_with_warmup
 from torchmetrics.classification import BinaryAccuracy, BinaryF1Score
 
 
