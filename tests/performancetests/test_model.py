@@ -41,7 +41,7 @@ def load_model(artifact_name: str | None = None, logdir: str | None = None) -> J
 
 @pytest.mark.skipif(
     not os.getenv("MODEL_NAME") or not os.getenv("WANDB_API_KEY"),
-    reason="MODEL_NAME and WANDB_API_KEY environment variables required for performance tests"
+    reason="MODEL_NAME and WANDB_API_KEY environment variables required for performance tests",
 )
 def test_model_speed():
     model = load_model(os.getenv("MODEL_NAME"))

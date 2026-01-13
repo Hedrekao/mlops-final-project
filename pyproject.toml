@@ -70,9 +70,16 @@ explicit = true
 line-length = 120
 
 [tool.coverage.run]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    "*/tmp/*",
+    "*/_remote_module_non_scriptable.py",
+]
 
-[mypy]
-ignore_missing_imports = true
-
-
+[tool.coverage.report]
+skip_empty = true
+ignore_errors = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]

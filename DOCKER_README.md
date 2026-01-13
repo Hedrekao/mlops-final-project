@@ -123,7 +123,7 @@ services:
     ports: ["8000:8000"]
     volumes: [models, configs]
     healthcheck: enabled
-    
+
   train:
     build: dockerfiles/train.dockerfile
     volumes: [data, models, configs]
