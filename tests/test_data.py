@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 from postings_classifier.data import JobPostingsDataModule, JobPostingsDataset
 
@@ -16,26 +17,70 @@ def test_jobpostingsdataset_basic():
     assert torch.equal(item["labels"], labels[0])
 
 
-def test_datamodule_setup_and_dataloader():
-    """Smoke-test `JobPostingsDataModule` using the included processed tensors.
+def test_datamodule_preprocessing(tmp_path):
+    """Test that preprocessing correctly tokenizes and splits data.
 
-    This test avoids network calls by not invoking `prepare_data()` (which
-    downloads a tokenizer). The repository already contains processed tensors
-    under `data/processed/` so calling `setup()` should load them.
+    This test creates a small synthetic CSV dataset and verifies:
+    - Data is tokenized correctly
+    - Train/val/test splits are created with correct proportions
+    - Labels are preserved correctly
+    - All required files are saved
     """
-    dm = JobPostingsDataModule(processed_path="data/processed", batch_size=4, num_workers=0)
+    raw_path = tmp_path / "raw"
+    raw_path.mkdir()
+    processed_path = tmp_path / "processed"
 
-    # Do not call prepare_data() to avoid network access; the processed files are present.
-    dm.setup()
+    test_data = pd.DataFrame(
+        {
+            "job_title": ["Software Engineer", "Data Scientist", "Product Manager", "Scam Job", "Fake Position"] * 4,
+            "job_description": ["Build software"] * 10 + ["Analyze data"] * 10,
+            "requirements": ["5 years exp"] * 20,
+            "is_fake": [0] * 10 + [1] * 10,
+        }
+    )
+    csv_path = raw_path / "test_data.csv"
+    test_data.to_csv(csv_path, index=False)
 
-    assert dm.train_dataset is not None
-    assert dm.val_dataset is not None
-    assert dm.test_dataset is not None
+    dm = JobPostingsDataModule(
+        raw_path=str(csv_path),
+        processed_path=str(processed_path),
+        model_name="distilbert-base-uncased",
+        batch_size=4,
+        max_length=64,
+        train_split=0.6,
+        val_split=0.2,
+        test_split=0.2,
+    )
 
-    train_loader = dm.train_dataloader()
-    batch = next(iter(train_loader))
+    dm.prepare_data()
 
-    # Batch should contain the three tensors
-    assert "input_ids" in batch and "attention_mask" in batch and "labels" in batch
-    assert batch["input_ids"].ndim == 2 or batch["input_ids"].ndim == 3
-    assert batch["labels"].dtype == torch.long
+    assert (processed_path / "train_input_ids.pt").exists()
+    assert (processed_path / "train_attention_mask.pt").exists()
+    assert (processed_path / "train_labels.pt").exists()
+    assert (processed_path / "val_input_ids.pt").exists()
+    assert (processed_path / "val_attention_mask.pt").exists()
+    assert (processed_path / "val_labels.pt").exists()
+    assert (processed_path / "test_input_ids.pt").exists()
+    assert (processed_path / "test_attention_mask.pt").exists()
+    assert (processed_path / "test_labels.pt").exists()
+
+    train_ids = torch.load(processed_path / "train_input_ids.pt", weights_only=True)
+    train_labels = torch.load(processed_path / "train_labels.pt", weights_only=True)
+    val_ids = torch.load(processed_path / "val_input_ids.pt", weights_only=True)
+    val_labels = torch.load(processed_path / "val_labels.pt", weights_only=True)
+    test_ids = torch.load(processed_path / "test_input_ids.pt", weights_only=True)
+    test_labels = torch.load(processed_path / "test_labels.pt", weights_only=True)
+
+    total_samples = len(train_labels) + len(val_labels) + len(test_labels)
+    assert total_samples == 20
+
+    assert len(train_labels) == 12
+    assert len(val_labels) == 4
+    assert len(test_labels) == 4
+
+    assert train_ids.shape[1] == 64
+    assert val_ids.shape[1] == 64
+    assert test_ids.shape[1] == 64
+
+    assert train_labels.dtype == torch.long
+    assert set(train_labels.tolist() + val_labels.tolist() + test_labels.tolist()).issubset({0, 1})
