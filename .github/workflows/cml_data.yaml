@@ -9,6 +9,11 @@ on:
       - 'data/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   validate_data:
     runs-on: ubuntu-latest
