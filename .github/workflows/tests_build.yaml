@@ -60,4 +60,8 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Submit build to GCloud
-        run: gcloud builds submit . --config cloudbuild_containers.yaml
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          gcloud builds submit . \
+            --config cloudbuild_containers.yaml \
+            --substitutions=SHORT_SHA=${SHORT_SHA}
