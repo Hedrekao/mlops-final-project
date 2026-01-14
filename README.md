@@ -74,6 +74,16 @@ a [cookiecutter template](https://github.com/cookiecutter/cookiecutter) for gett
 started with Machine Learning Operations (MLOps).
 
 
+## Data Management
+
+This project uses **DVC (Data Version Control)** with Google Cloud Storage. After cloning the repository, pull the data:
+
+```bash
+uv run dvc pull
+```
+
+For detailed instructions on working with data, see [docs/source/data_management.md](docs/source/data_management.md).
+
 ## Running tests and coverage
 
 Use the project's `uv` wrapper to run tests and print a coverage report.
