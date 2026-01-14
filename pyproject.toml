@@ -39,6 +39,7 @@ dependencies = [
     "wandb>=0.23.1",
     "dvc>=3.66.1",
     "dvc-gs>=3.0.2",
+    "requests>=2.32.5",
 ]
 
 
