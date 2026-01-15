@@ -55,6 +55,22 @@ steps:
       - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:latest'
     waitFor: ['build-api']
 
+  # Deploy API to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'postings-classifier-api'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--allow-unauthenticated'
+      - '--set-env-vars=MODEL_CHECKPOINT=/gcs/jop-postings-mlops-data/models/checkpoints/best.ckpt,HF_MODEL_PATH=/gcs/jop-postings-mlops-data/hf/distilbert-base-uncased,HF_HOME=/gcs/jop-postings-mlops-data/huggingface,TRANSFORMERS_OFFLINE=1'
+      - '--service-account=cloud-run-sa@$PROJECT_ID.iam.gserviceaccount.com'
+    waitFor: ['push-api']
+
 images:
   - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
   - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:latest'
