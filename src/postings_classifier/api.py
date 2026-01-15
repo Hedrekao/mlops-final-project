@@ -23,13 +23,16 @@ app = FastAPI(title="Postings Classifier")
 logger = logging.getLogger("uvicorn.error")
 logging.basicConfig(level=logging.DEBUG)
 
+
 class TextIn(BaseModel):
     text: str
+
 
 class HealthOut(BaseModel):
     status: str
     model_loaded: bool
     load_error: str
+
 
 # Globals populated lazily on first request
 _MODEL: Optional[torch.nn.Module] = None
@@ -60,19 +63,13 @@ def _find_checkpoint() -> Optional[str]:
         logger.warning("MODEL_CHECKPOINT env path does not exist: %s", env_path)
 
     # Search local checkpoints (development)
-    candidates = (
-        glob.glob("models/checkpoints/*best*.ckpt")
-        + glob.glob("models/checkpoints/*.ckpt")
-    )
+    candidates = glob.glob("models/checkpoints/*best*.ckpt") + glob.glob("models/checkpoints/*.ckpt")
     if candidates:
         logger.info("Found local checkpoint: %s", candidates[0])
         return candidates[0]
 
     # Search GCS mount paths (Cloud Run with mounted bucket)
-    gcs_candidates = (
-        glob.glob("/gcs/*/models/checkpoints/*best*.ckpt")
-        + glob.glob("/gcs/*/models/checkpoints/*.ckpt")
-    )
+    gcs_candidates = glob.glob("/gcs/*/models/checkpoints/*best*.ckpt") + glob.glob("/gcs/*/models/checkpoints/*.ckpt")
     if gcs_candidates:
         logger.info("Found checkpoint in GCS mount: %s", gcs_candidates[0])
         return gcs_candidates[0]
@@ -131,7 +128,6 @@ def _load_model_and_tokenizer(device: str = "cpu") -> tuple[Optional[torch.nn.Mo
         logger.info("Loading tokenizer: %s", tok_model_name)
         tok_path = os.getenv("HF_MODEL_PATH", tok_model_name)
         tokenizer = AutoTokenizer.from_pretrained(tok_path, local_files_only=True)
-
 
         logger.info("Successfully loaded tokenizer")
         return model, tokenizer

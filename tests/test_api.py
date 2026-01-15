@@ -133,11 +133,7 @@ class TestPredictEndpoint:
     def test_predict_multiple_requests(self):
         """Test /predict with multiple consecutive requests."""
         client = TestClient(app)
-        texts = [
-            "Senior Software Engineer",
-            "Full Stack Developer wanted",
-            "This is a fake posting"
-        ]
+        texts = ["Senior Software Engineer", "Full Stack Developer wanted", "This is a fake posting"]
         for text in texts:
             payload = {"text": text}
             resp = client.post("/predict", json=payload)
@@ -186,11 +182,11 @@ class TestAPIIntegration:
     def test_health_then_predict(self):
         """Test health check followed by prediction."""
         client = TestClient(app)
-        
+
         # Check health
         health_resp = client.get("/health")
         assert health_resp.status_code == 200
-        
+
         # Make prediction
         pred_payload = {"text": "Job posting"}
         pred_resp = client.post("/predict", json=pred_payload)
@@ -200,14 +196,14 @@ class TestAPIIntegration:
         """Test multiple sequential predictions are consistent."""
         client = TestClient(app)
         payload = {"text": "Senior engineer needed"}
-        
+
         # Make two predictions with same text
         resp1 = client.post("/predict", json=payload)
         resp2 = client.post("/predict", json=payload)
-        
+
         assert resp1.status_code == 200
         assert resp2.status_code == 200
-        
+
         # Both should return same label (model is deterministic)
         data1 = resp1.json()
         data2 = resp2.json()
