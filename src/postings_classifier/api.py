@@ -129,8 +129,6 @@ def _load_model_and_tokenizer(device: str = "cpu") -> tuple[Optional[torch.nn.Mo
             tok_model_name = os.getenv("TOKENIZER_NAME", "distilbert-base-uncased")
 
         logger.info("Loading tokenizer: %s", tok_model_name)
-        cache_dir = os.getenv("HF_HOME", "/app/.cache/huggingface")
-        # Try loading with cache_dir, allow online fallback if cache is empty
         tok_path = os.getenv("HF_MODEL_PATH", tok_model_name)
         tokenizer = AutoTokenizer.from_pretrained(tok_path, local_files_only=True)
 
