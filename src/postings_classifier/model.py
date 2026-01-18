@@ -1,3 +1,4 @@
+import os
 import torch
 from torch import nn
 import lightning as L
@@ -19,8 +20,8 @@ class JobPostingsClassifier(L.LightningModule):
     ) -> None:
         super().__init__()
         self.save_hyperparameters()
-
-        self.encoder = AutoModel.from_pretrained(model_name)
+        hf_path = os.getenv("HF_MODEL_PATH", model_name)
+        self.encoder = AutoModel.from_pretrained(hf_path, local_files_only=True)
         self.classifier = nn.Sequential(
             nn.Dropout(0.1),
             nn.Linear(self.encoder.config.hidden_size, num_labels),
@@ -140,6 +141,7 @@ class JobPostingsClassifier(L.LightningModule):
 
         return {"optimizer": optimizer}
 
+    @classmethod
     def load_from_checkpoint(  # type: ignore[override]
         cls,
         checkpoint_path: str,

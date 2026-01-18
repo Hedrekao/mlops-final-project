@@ -186,3 +186,4 @@ profiling/
 models/lightning_logs/**
 events.out.tfevents*
 logs/
+/artifacts

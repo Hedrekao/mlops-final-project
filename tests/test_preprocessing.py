@@ -31,7 +31,7 @@ def test_jobpostingsclassifier_forward_and_optim(monkeypatch):
     encoder so the test runs offline and fast.
     """
     # patch AutoModel.from_pretrained used inside the model implementation
-    monkeypatch.setattr(model_mod, "AutoModel", types.SimpleNamespace(from_pretrained=lambda *_: DummyEncoder()))
+    monkeypatch.setattr(model_mod, "AutoModel", types.SimpleNamespace(from_pretrained=lambda *_, **__: DummyEncoder()))
 
     model = JobPostingsClassifier(model_name="dummy", num_labels=2, freeze_encoder=False)
 
