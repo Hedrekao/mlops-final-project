@@ -449,10 +449,10 @@ def get_monitoring_report(n: int = 100) -> HTMLResponse:
             text_preview = row["text"][:50] + "..." if len(row["text"]) > 50 else row["text"]
             html_content += f"""
                         <tr>
-                            <td>{row['timestamp']}</td>
+                            <td>{row["timestamp"]}</td>
                             <td>{text_preview}</td>
-                            <td>{row['label']}</td>
-                            <td>{row['score']:.3f}</td>
+                            <td>{row["label"]}</td>
+                            <td>{row["score"]:.3f}</td>
                         </tr>
             """
 
