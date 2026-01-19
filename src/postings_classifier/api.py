@@ -10,6 +10,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
@@ -22,12 +23,22 @@ from pydantic import BaseModel
 import logging
 import pandas as pd
 from google.cloud import storage
+from prometheus_client import Counter, Histogram, Summary, make_asgi_app
 
 from transformers import AutoTokenizer
 
 app = FastAPI(title="Postings Classifier")
 logger = logging.getLogger("uvicorn.error")
 logging.basicConfig(level=logging.INFO)  # Changed from DEBUG to INFO
+
+# Prometheus metrics
+prediction_requests = Counter("postings_prediction_requests", "Number of prediction requests")
+prediction_errors = Counter("postings_prediction_errors", "Number of prediction errors")
+prediction_latency = Histogram("postings_prediction_latency_seconds", "Prediction latency in seconds")
+text_length_summary = Summary("postings_text_length", "Input text length summary")
+
+# Mount Prometheus metrics endpoint
+app.mount("/metrics", make_asgi_app())
 
 
 class TextIn(BaseModel):
@@ -193,9 +204,16 @@ def predict(payload: TextIn, background_tasks: BackgroundTasks) -> Dict[str, obj
     """
     global _MODEL, _TOKENIZER, _LOAD_ERROR
 
+    prediction_requests.inc()
+    start_time = time.time()
+
     text = (payload.text or "").strip()
     if not text:
+        latency = time.time() - start_time
+        prediction_latency.observe(latency)
         return {"label": "unknown", "score": 0.0, "text": text}
+
+    text_length_summary.observe(len(text))
 
     # Lazy load on first call
     if _MODEL is None or _TOKENIZER is None:
@@ -228,17 +246,26 @@ def predict(payload: TextIn, background_tasks: BackgroundTasks) -> Dict[str, obj
                 label = _LABEL_MAP.get(top_idx, str(top_idx))
 
             background_tasks.add_task(_save_prediction, text, label, score)
+            latency = time.time() - start_time
+            prediction_latency.observe(latency)
             return {"label": label, "score": score, "text": text}
         except Exception as e:
             logger.exception("Exception during inference: %s", e)
+            prediction_errors.inc()
+            latency = time.time() - start_time
+            prediction_latency.observe(latency)
             return {"label": "error", "score": 0.0, "text": text, "error": str(e)}
 
     # Fallback rule-based predictor
     lower = text.lower()
     if "fake" in lower:
         background_tasks.add_task(_save_prediction, text, "fake", 0.99)
+        latency = time.time() - start_time
+        prediction_latency.observe(latency)
         return {"label": "fake", "score": 0.99, "text": text}
     background_tasks.add_task(_save_prediction, text, "real", 0.75)
+    latency = time.time() - start_time
+    prediction_latency.observe(latency)
     return {"label": "real", "score": 0.75, "text": text}
 
 
