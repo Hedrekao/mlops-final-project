@@ -187,3 +187,4 @@ models/lightning_logs/**
 events.out.tfevents*
 logs/
 /artifacts
+prediction_database.csv

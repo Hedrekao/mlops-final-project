@@ -4,7 +4,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$BUILD_ID'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
       - '-t'
       - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:latest'
       - '-f'
@@ -17,7 +17,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$BUILD_ID'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
       - '-t'
       - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:latest'
       - '-f'
@@ -29,7 +29,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$BUILD_ID'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
     id: 'push-train'
     waitFor: ['build-train']
 
@@ -44,7 +44,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$BUILD_ID'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
     id: 'push-api'
     waitFor: ['build-api']
 
@@ -61,7 +61,7 @@ steps:
       - 'run'
       - 'deploy'
       - 'postings-classifier-api'
-      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$BUILD_ID'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
       - '--region=europe-west1'
       - '--platform=managed'
       - '--memory=4Gi'
@@ -74,9 +74,9 @@ steps:
     waitFor: ['push-api']
 
 images:
-  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$BUILD_ID'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:$SHORT_SHA'
   - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-train:latest'
-  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$BUILD_ID'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:$SHORT_SHA'
   - 'europe-west1-docker.pkg.dev/$PROJECT_ID/mlops-registry/postings-classifier-api:latest'
 
 options:

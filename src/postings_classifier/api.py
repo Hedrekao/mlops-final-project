@@ -7,21 +7,26 @@ back to a small rule-based predictor so the API is usable for smoke-tests.
 
 from __future__ import annotations
 
+import csv
 import glob
 import os
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 import torch
 import torch.nn.functional as F
-from fastapi import FastAPI
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import logging
+import pandas as pd
 
 from transformers import AutoTokenizer
 
 app = FastAPI(title="Postings Classifier")
 logger = logging.getLogger("uvicorn.error")
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)  # Changed from DEBUG to INFO
 
 
 class TextIn(BaseModel):
@@ -39,6 +44,7 @@ _MODEL: Optional[torch.nn.Module] = None
 _TOKENIZER: Optional[AutoTokenizer] = None
 _LOAD_ERROR: Optional[str] = None
 _LABEL_MAP = {0: "real", 1: "fake"}
+_PREDICTION_DB = Path("prediction_database.csv")
 
 
 def _find_checkpoint() -> Optional[str]:
@@ -127,13 +133,28 @@ def _load_model_and_tokenizer(device: str = "cpu") -> tuple[Optional[torch.nn.Mo
 
         logger.info("Loading tokenizer: %s", tok_model_name)
         tok_path = os.getenv("HF_MODEL_PATH", tok_model_name)
-        tokenizer = AutoTokenizer.from_pretrained(tok_path, local_files_only=True)
+        tokenizer = AutoTokenizer.from_pretrained(tok_path, local_files_only=False)
 
         logger.info("Successfully loaded tokenizer")
         return model, tokenizer
     except Exception as e:
         logger.exception("Failed to load model/tokenizer: %s", e)
         return None, None
+
+
+def _save_prediction(text: str, label: str, score: float) -> None:
+    """Save prediction to CSV database for drift monitoring."""
+    try:
+        timestamp = datetime.now().isoformat()
+        file_exists = _PREDICTION_DB.exists()
+
+        with open(_PREDICTION_DB, "a", newline="") as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(["timestamp", "text", "label", "score"])
+            writer.writerow([timestamp, text, label, score])
+    except Exception as e:
+        logger.exception("Failed to save prediction: %s", e)
 
 
 @app.get("/")
@@ -151,11 +172,12 @@ def health():
 
 
 @app.post("/predict")
-def predict(payload: TextIn) -> Dict[str, object]:
+def predict(payload: TextIn, background_tasks: BackgroundTasks) -> Dict[str, object]:
     """Predict label and score given raw text.
 
     The endpoint will try to use a trained model if available, otherwise
     it falls back to a simple rule: presence of the word "fake" -> fake.
+    Predictions are saved to a database in the background for monitoring.
     """
     global _MODEL, _TOKENIZER, _LOAD_ERROR
 
@@ -193,6 +215,7 @@ def predict(payload: TextIn) -> Dict[str, object]:
                 score = float(probs[top_idx].item())
                 label = _LABEL_MAP.get(top_idx, str(top_idx))
 
+            background_tasks.add_task(_save_prediction, text, label, score)
             return {"label": label, "score": score, "text": text}
         except Exception as e:
             logger.exception("Exception during inference: %s", e)
@@ -201,5 +224,178 @@ def predict(payload: TextIn) -> Dict[str, object]:
     # Fallback rule-based predictor
     lower = text.lower()
     if "fake" in lower:
+        background_tasks.add_task(_save_prediction, text, "fake", 0.99)
         return {"label": "fake", "score": 0.99, "text": text}
+    background_tasks.add_task(_save_prediction, text, "real", 0.75)
     return {"label": "real", "score": 0.75, "text": text}
+
+
+# Monitoring endpoints
+@app.get("/monitoring/stats")
+def get_monitoring_stats() -> dict:
+    """Get statistics about collected predictions."""
+    try:
+        if not _PREDICTION_DB.exists():
+            return {"total_predictions": 0, "label_distribution": {}, "message": "No predictions collected yet"}
+
+        df = pd.read_csv(_PREDICTION_DB)
+        label_counts = df["label"].value_counts().to_dict()
+
+        return {
+            "total_predictions": len(df),
+            "label_distribution": label_counts,
+            "average_score": float(df["score"].mean()),
+            "min_score": float(df["score"].min()),
+            "max_score": float(df["score"].max()),
+        }
+    except Exception as e:
+        logger.exception(f"Error getting stats: {e}")
+        return {"error": str(e)}
+
+
+@app.get("/monitoring/report")
+def get_monitoring_report(n: int = 100) -> HTMLResponse:
+    """Generate a simple drift monitoring report."""
+    try:
+        if not _PREDICTION_DB.exists():
+            return HTMLResponse(
+                content="""
+                <html>
+                    <head><title>Monitoring - No Data</title></head>
+                    <body style="font-family: Arial, sans-serif; padding: 40px; text-align: center;">
+                        <h1 style="color: #ff6b6b;">📊 No Predictions Yet</h1>
+                        <p style="font-size: 18px;">No prediction data available. Make some predictions first!</p>
+                        <p style="color: #666; margin-top: 20px;">Use the /predict endpoint to create predictions.</p>
+                    </body>
+                </html>
+                """,
+                status_code=200,
+            )
+
+        df = pd.read_csv(_PREDICTION_DB)
+
+        if len(df) < 10:
+            return HTMLResponse(
+                content=f"""
+                <html>
+                    <head><title>Monitoring - Insufficient Data</title></head>
+                    <body style="font-family: Arial, sans-serif; padding: 40px; text-align: center;">
+                        <h1 style="color: #ffa500;">⚠️ Insufficient Predictions</h1>
+                        <p style="font-size: 18px;">Need at least 10 predictions for monitoring.</p>
+                        <p style="color: #666; margin-top: 20px;">
+                            Current predictions: <strong>{len(df)}</strong><br>
+                            Needed: <strong>10</strong><br>
+                            Missing: <strong>{10 - len(df)}</strong>
+                        </p>
+                    </body>
+                </html>
+                """,
+                status_code=200,
+            )
+
+        # Get statistics
+        recent_df = df.tail(n)
+        label_counts = recent_df["label"].value_counts().to_dict()
+        avg_score = recent_df["score"].mean()
+
+        # Create simple HTML report
+        html_content = f"""
+        <html>
+            <head>
+                <title>Prediction Monitoring Report</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }}
+                    .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+                    h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
+                    .stat-box {{ background: #f9f9f9; padding: 15px; margin: 10px 0; border-left: 4px solid #4CAF50; }}
+                    .stat-label {{ font-weight: bold; color: #666; }}
+                    .stat-value {{ font-size: 24px; color: #333; margin: 5px 0; }}
+                    table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+                    th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+                    th {{ background: #4CAF50; color: white; }}
+                    tr:hover {{ background: #f5f5f5; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>📊 Prediction Monitoring Report</h1>
+
+                    <div class="stat-box">
+                        <div class="stat-label">Total Predictions Analyzed</div>
+                        <div class="stat-value">{len(recent_df)}</div>
+                    </div>
+
+                    <div class="stat-box">
+                        <div class="stat-label">Average Confidence Score</div>
+                        <div class="stat-value">{avg_score:.3f}</div>
+                    </div>
+
+                    <h2>Label Distribution</h2>
+                    <table>
+                        <tr>
+                            <th>Label</th>
+                            <th>Count</th>
+                            <th>Percentage</th>
+                        </tr>
+        """
+
+        for label, count in label_counts.items():
+            percentage = (count / len(recent_df)) * 100
+            html_content += f"""
+                        <tr>
+                            <td>{label}</td>
+                            <td>{count}</td>
+                            <td>{percentage:.1f}%</td>
+                        </tr>
+            """
+
+        html_content += """
+                    </table>
+
+                    <h2>Recent Predictions</h2>
+                    <table>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Text (preview)</th>
+                            <th>Label</th>
+                            <th>Score</th>
+                        </tr>
+        """
+
+        for _, row in recent_df.tail(10).iterrows():
+            text_preview = row["text"][:50] + "..." if len(row["text"]) > 50 else row["text"]
+            html_content += f"""
+                        <tr>
+                            <td>{row['timestamp']}</td>
+                            <td>{text_preview}</td>
+                            <td>{row['label']}</td>
+                            <td>{row['score']:.3f}</td>
+                        </tr>
+            """
+
+        html_content += """
+                    </table>
+
+                    <p style="color: #666; margin-top: 30px; font-size: 14px;">
+                        For advanced drift detection with Evidently, use the separate monitoring service.
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+
+        return HTMLResponse(content=html_content, status_code=200)
+
+    except Exception as e:
+        logger.exception(f"Error generating report: {e}")
+        return HTMLResponse(
+            content=f"""
+            <html>
+                <body style="font-family: Arial; padding: 40px; text-align: center;">
+                    <h1 style="color: #ff6b6b;">❌ Error</h1>
+                    <p>Error generating report: {str(e)}</p>
+                </body>
+            </html>
+            """,
+            status_code=500,
+        )

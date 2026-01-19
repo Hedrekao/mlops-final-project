@@ -12,6 +12,8 @@ transformers>=4.57.3
 typer==0.21.1
 uvicorn==0.34.0
 pytest==9.0.2
+evidently>=1.7.0
+requests>=2.31.0
 
 # Install the local package
 -e .

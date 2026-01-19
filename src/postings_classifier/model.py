@@ -21,7 +21,7 @@ class JobPostingsClassifier(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         hf_path = os.getenv("HF_MODEL_PATH", model_name)
-        self.encoder = AutoModel.from_pretrained(hf_path, local_files_only=True)
+        self.encoder = AutoModel.from_pretrained(hf_path, local_files_only=False)
         self.classifier = nn.Sequential(
             nn.Dropout(0.1),
             nn.Linear(self.encoder.config.hidden_size, num_labels),
