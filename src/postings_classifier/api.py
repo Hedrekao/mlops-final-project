@@ -41,7 +41,8 @@ class HealthOut(BaseModel):
 
 
 # GCS configuration
-BUCKET_NAME = "postings-classifier-predictions"
+# Use the existing project bucket for prediction logging.
+BUCKET_NAME = "jop-postings-mlops-data"
 
 # Globals populated lazily on first request
 _MODEL: Optional[torch.nn.Module] = None
