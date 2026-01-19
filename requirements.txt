@@ -14,6 +14,7 @@ uvicorn==0.34.0
 pytest==9.0.2
 evidently>=1.7.0
 requests>=2.31.0
+google-cloud-storage>=2.10.0
 
 # Install the local package
 -e .

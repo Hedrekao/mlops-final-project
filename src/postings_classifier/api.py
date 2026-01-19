@@ -7,8 +7,8 @@ back to a small rule-based predictor so the API is usable for smoke-tests.
 
 from __future__ import annotations
 
-import csv
 import glob
+import json
 import os
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +21,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import logging
 import pandas as pd
+from google.cloud import storage
 
 from transformers import AutoTokenizer
 
@@ -38,6 +39,9 @@ class HealthOut(BaseModel):
     model_loaded: bool
     load_error: str
 
+
+# GCS configuration
+BUCKET_NAME = "postings-classifier-predictions"
 
 # Globals populated lazily on first request
 _MODEL: Optional[torch.nn.Module] = None
@@ -143,18 +147,25 @@ def _load_model_and_tokenizer(device: str = "cpu") -> tuple[Optional[torch.nn.Mo
 
 
 def _save_prediction(text: str, label: str, score: float) -> None:
-    """Save prediction to CSV database for drift monitoring."""
+    """Save prediction to CSV locally or upload to GCS."""
     try:
         timestamp = datetime.now().isoformat()
-        file_exists = _PREDICTION_DB.exists()
+        prediction_data = {
+            "text": text,
+            "label": label,
+            "score": score,
+            "timestamp": timestamp,
+        }
 
-        with open(_PREDICTION_DB, "a", newline="") as f:
-            writer = csv.writer(f)
-            if not file_exists:
-                writer.writerow(["timestamp", "text", "label", "score"])
-            writer.writerow([timestamp, text, label, score])
+        # Save to GCS (following DTU example)
+        client = storage.Client()
+        bucket = client.bucket(BUCKET_NAME)
+        safe_timestamp = timestamp.replace(":", "-").replace(".", "-")
+        blob = bucket.blob(f"predictions/prediction_{safe_timestamp}.json")
+        blob.upload_from_string(json.dumps(prediction_data))
+        logger.info("Prediction saved to GCS bucket.")
     except Exception as e:
-        logger.exception("Failed to save prediction: %s", e)
+        logger.exception(f"Error saving prediction: {e}")
 
 
 @app.get("/")
@@ -230,15 +241,59 @@ def predict(payload: TextIn, background_tasks: BackgroundTasks) -> Dict[str, obj
     return {"label": "real", "score": 0.75, "text": text}
 
 
+def _load_predictions(n: int = None) -> pd.DataFrame:
+    """Load predictions from GCS or local CSV.
+
+    Try GCS first (cloud), fall back to local CSV (development).
+    """
+    predictions = []
+
+    # Try GCS first
+    try:
+        client = storage.Client()
+        bucket = client.bucket(BUCKET_NAME)
+        blobs = list(bucket.list_blobs(prefix="predictions/"))
+        blobs.sort(key=lambda x: x.updated, reverse=True)
+        if n:
+            blobs = blobs[:n]
+
+        for blob in blobs:
+            try:
+                data = json.loads(blob.download_as_string().decode())
+                predictions.append(data)
+            except Exception as e:
+                logger.warning(f"Failed to parse {blob.name}: {e}")
+
+        if predictions:
+            logger.debug(f"Loaded {len(predictions)} predictions from GCS")
+            return pd.DataFrame(predictions)
+    except Exception as e:
+        logger.debug(f"GCS not available, trying local CSV: {e}")
+
+    # Fall back to local CSV
+    if _PREDICTION_DB.exists():
+        try:
+            df = pd.read_csv(_PREDICTION_DB)
+            if n:
+                df = df.tail(n)
+            logger.debug(f"Loaded {len(df)} predictions from local CSV")
+            return df
+        except Exception as e:
+            logger.exception(f"Failed to load local CSV: {e}")
+
+    return pd.DataFrame()
+
+
 # Monitoring endpoints
 @app.get("/monitoring/stats")
 def get_monitoring_stats() -> dict:
-    """Get statistics about collected predictions."""
+    """Get statistics about collected predictions (from GCS or local CSV)."""
     try:
-        if not _PREDICTION_DB.exists():
+        df = _load_predictions()
+
+        if df.empty:
             return {"total_predictions": 0, "label_distribution": {}, "message": "No predictions collected yet"}
 
-        df = pd.read_csv(_PREDICTION_DB)
         label_counts = df["label"].value_counts().to_dict()
 
         return {
@@ -255,9 +310,11 @@ def get_monitoring_stats() -> dict:
 
 @app.get("/monitoring/report")
 def get_monitoring_report(n: int = 100) -> HTMLResponse:
-    """Generate a simple drift monitoring report."""
+    """Generate a drift monitoring report (from GCS or local CSV)."""
     try:
-        if not _PREDICTION_DB.exists():
+        df = _load_predictions(n=n)
+
+        if df.empty:
             return HTMLResponse(
                 content="""
                 <html>
@@ -271,8 +328,6 @@ def get_monitoring_report(n: int = 100) -> HTMLResponse:
                 """,
                 status_code=200,
             )
-
-        df = pd.read_csv(_PREDICTION_DB)
 
         if len(df) < 10:
             return HTMLResponse(
@@ -375,10 +430,6 @@ def get_monitoring_report(n: int = 100) -> HTMLResponse:
 
         html_content += """
                     </table>
-
-                    <p style="color: #666; margin-top: 30px; font-size: 14px;">
-                        For advanced drift detection with Evidently, use the separate monitoring service.
-                    </p>
                 </div>
             </body>
         </html>
