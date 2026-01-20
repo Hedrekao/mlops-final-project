@@ -132,7 +132,7 @@ will check the repositories and the code to verify your answers.
 >
 > *sXXXXXX, sXXXXXX, sXXXXXX*
 >
-> Answer: s250695,
+> Answer: s250695, s253811, s250778, s250779
 
 
 ### Question 3
@@ -181,7 +181,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
---- question 5 fill here ---
+We started from the DTU cookiecutter and kept the core layout, we deviated by adding cloud deployment assets: `dockerfiles/` for API, training, and FastAPI images; `docker-compose.yml` for local serving; `cloudbuild_containers.yaml` for CI builds; and `docs/` with mkdocs notes on logging and profiling.
 
 ### Question 6
 
@@ -334,7 +334,11 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 15 fill here ---
+We developed three Docker images: one for API/inference deployment, one for training, and one for FastAPI serving.
+To run the API image locally:
+`docker build -f dockerfiles/api.dockerfile -t postings-api:latest . && docker run -p 8000:8000 postings-api:latest`.
+The training image (`train.dockerfile`) installs all dependencies including GPU support (PyTorch, Lightning) and can be invoked with `docker run -v $(pwd)/data:/app/data postings-train:latest`. Both images are built automatically via
+Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry. `docker-compose.yml` enables local multi-container orchestration for development.
 
 ### Question 16
 
@@ -349,7 +353,7 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 16 fill here ---
+We used print statements and logging with `loguru` to trace execution flow, or some team members used VS Code's built-in debugger during development. We extensively used PyTorch Lightning's logging and validation callbacks to catch issues early during training. We did implement profiling via PyTorch Profiler (configured in `configs/trainer/default.yaml`) to identify performance bottlenecks. The profiler tracks CPU/GPU time and memory allocation per operation. Additionally, we used `loguru` for structured logging across all modules (training, inference, API) to surface errors and warnings. For API debugging, we used FastAPI's built-in documentation (`/docs`) and manual curl requests. Cloud deployment bugs were debugged via Cloud Logging and local Docker testing before pushing to production.
 
 ## Working in the cloud
 
@@ -486,7 +490,7 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 26 fill here ---
+Yes, we implemented two-layer monitoring. **System metrics**: FastAPI `/predict` endpoint includes Prometheus instrumentation tracking request count, error rate, latency distribution, and input text length. These metrics are exposed at `/metrics` and scraped by Cloud Run's Managed Service for Prometheus sidecar every 30 seconds, pushing to Google Cloud Monitoring for real-time dashboards and alerting. **Prediction monitoring**: The `/monitoring/report` endpoint displays HTML dashboards showing label distributions, confidence scores, and recent predictions. All predictions are logged to GCS (`predictions/prediction_*.json`) with timestamps for historical analysis. Together, these layers continuously measure system health, track inference performance, maintain prediction audit trails, and enable detection of anomalies that could indicate model degradation or data distribution shifts.
 
 ## Overall discussion of project
 
@@ -538,7 +542,20 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 29 fill here ---
+Answer:
+
+![MLOPS Architecture](figures/MLOPS_diagram.png)
+
+Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring. **Local development**: Team members clone the repository, set up the environment with `uv sync`, and develop code Tests (pytest) validate data loading, model training, and API functionality locally before pushing.
+
+**Data versioning**: Training data (`data/raw/fake_real_job_postings_3000x25.csv`) is versioned using DVC with remote storage configured at `gs://jop-postings-mlops-data/dvc-store`. This allows team members to track dataset changes while keeping the Git repository lightweight.
+
+**CI/CD pipeline**: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, and pre-commit hooks. If all checks pass and the PR is approved, code merges to main, automatically triggering Cloud Build to construct Docker images (training, API, FastAPI) and push them to Google Artifact Registry.
+
+**Cloud deployment**: The API image is deployed to Cloud Run, which auto-scales based on traffic. The Prometheus sidecar is configured on the Cloud Run service for Google Cloud Monitoring for real-time dashboards and alerting.
+
+**Data flow**: Input requests hit the `/predict` endpoint, which loads the PyTorch model and returns predictions. Every prediction is logged as JSON to Google Cloud Storage (`predictions/prediction_*.json`).
+
 
 ### Question 30
 
@@ -570,4 +587,8 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 > *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
 > Answer:
 
---- question 31 fill here ---
+// Please add all of you here your contributions
+**Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
+
+All members contributed to code reviews, testing, and documentation.
+We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
