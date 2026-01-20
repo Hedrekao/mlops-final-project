@@ -7,8 +7,9 @@ on:
   workflow_dispatch: {}  # Allows manual executions
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
+  issues: write
 
 jobs:
   auto-update:
