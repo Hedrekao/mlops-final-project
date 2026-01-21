@@ -123,6 +123,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer: 103
 
+103
 
 
 ### Question 2
@@ -134,6 +135,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer: s250695,
 
+s250695, s253811, s250778, s250779
 
 ### Question 3
 > **Did you end up using any open-source frameworks/packages not covered in the course during your project? If so**
@@ -147,7 +149,7 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
---- question 3 fill here ---
+We didn't really used any other libraries than the ones covered in the course.
 
 ## Coding environment
 
@@ -166,6 +168,9 @@ will check the repositories and the code to verify your answers.
 >
 > Answer: uv sync
 
+We decided to use the uv to manage our dependencies. This was motivated by a great developer experience that comes from using uv as well as its speed when it comes to resolving dependencies. The version of python that should be used with the project is stored in `.python-version` file.
+Dependencies and their versions are stored automatically in `pyproject.toml` if added through `uv add <dep-nam>`, developers are also able to modify `pyproject.toml` themselves. A new team meber to get an exact copy of dev environment would just need to simply run (given of course that they
+have uv already installed on their machine) `uv sync`.
 
 ### Question 5
 
@@ -181,7 +186,9 @@ will check the repositories and the code to verify your answers.
 >
 > Answer:
 
---- question 5 fill here ---
+We have used the template showcased during the lecture that also includes all the files related to agentic programming. We have used most of the folders except the `notebooks` as we started working on actual python files from the start. Additionally, we have added a `scripts` directory.
+This directory contains the python scripts that should be suppose to run from command line, without being core of actual application, specifically a script that is located there is being called during CI to generate a comment in each pull request showcasing various data statistics.
+The overall structure of the product is centered around `src` containing the actual code of application, `data` containing both raw and processed data as well as dvc info, `models` containing output of training runs, `dockerfiles` with Dockefiles, `.github` with all the CI related files and `tests` containing all the test
 
 ### Question 6
 
@@ -207,6 +214,8 @@ will check the repositories and the code to verify your answers.
 
 > **How many tests did you implement and what are they testing in your code?**
 
+> Answer:
+
 The test suite contains five focused tests covering data, model, and API. Data tests validate the dataset and datamodule load preprocessed tensors, correct lengths, tensor shapes, and dtypes. Model tests verify model construction, a forward pass, and a single optimization step to ensure training paths work. API tests exercise key endpoints (responses and status codes) to catch integration regressions. Together they provide smoke-level coverage of critical pipelines.
 
 
@@ -217,6 +226,9 @@ The test suite contains five focused tests covering data, model, and API. Data t
 >
 > Recommended answer length: 100-200 words.
 >
+> Answer:
+
+@TODO too short
 The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests.
 
 ### Question 9
@@ -230,7 +242,10 @@ The total code coverage of code is 58%, which includes all our source code apart
 > *We made use of both branches and PRs in our project. In our group, each member had an branch that they worked on in*
 > *addition to the main branch. To merge code we ...*
 >
-> Answer:> *We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed.
+> Answer:
+
+@TODO too short
+We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed.
 
 
 ### Question 10
@@ -246,7 +261,9 @@ The total code coverage of code is 58%, which includes all our source code apart
 >
 > Answer:
 
---- question 10 fill here ---
+We did make of use of DVC in the following way: instead of storing raw dataset (before preprocessing) we use data versioning for it. The actual dataset is stored in bucket in Google Cloud. In our actual case we only had single version of dataset as it was a simple synthethic dataset from kaggle.
+But DVC was still a nice improvement of life, as all the team members could simply pull the data when running project. Additionally, if we were to train the model in the cloud we would also not have to care about making sure the data is the we could simply pull it. The versioning of data itself would be more useful
+if we would version actual preprocessed datasets, we would have different versions containing different feature preprocessing and that way we would be able to very easily swap between version.
 
 ### Question 11
 
@@ -262,12 +279,10 @@ The total code coverage of code is 58%, which includes all our source code apart
 > *here: <weblink>*
 >
 > Answer:
+
 We run continuous integration on GitHub Actions and have separated responsibilities across jobs to keep feedback fast and actionable. CI covers: unit testing (uv run pytest tests/), linting and formatting (uv run ruff check . --fix and uv run ruff format .), and pre-commit hooks (uv run pre-commit run --all-files). Workflows are triggered on pull requests and pushes to main; branch-protection requires passing CI and at least one review before merge. Tests and linters run in a matrix across operating systems (ubuntu-latest, windows-latest, macos-latest) and multiple Python versions (3.9–3.11) to catch platform-specific issues.
-
 Dependency installation uses the project’s uv-managed environment (uv sync / uv install) so CI mirrors local developer environments; the uv.lock file is used to pin versions. We enable caching (actions/cache) for the pip/venv cache keyed by python-version and the uv.lock hash to speed runs and reduce network overhead. Build artifacts such as test coverage reports are uploaded as job artifacts; coverage is produced during pytest runs and used for monitoring test health over time.
-
 Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit is executed to keep commits clean. Additional jobs include docs build checks (uv run mkdocs build) and an optional Docker image build for deployment testing. See .github/workflows/ci.yml for the CI implementation and workflow details.
-
 
 
 ## Running code and tracking experiments
@@ -302,7 +317,10 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 13 fill here ---
+Frankly speaking, given the problem and dataset and size of transformers picked, our model managed to achieve very good test performance already on first experiment and therefore we haven't experimented much.
+Even though we made sure that the infrastructure for such experiments is in place. We use hydra for setting reproducible configuration (including data, model config and even seed), logging to monitor a process of training and finally logging
+actual model in wandb. If one would like to reproduce the experiment they would have to use the same version of dataset (achievable thanks to DVC) and make sure that hydra configuration have the same values as during that experiment and of course
+be on the same git commit as when experiment was run.
 
 ### Question 14
 
@@ -366,7 +384,8 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 17 fill here ---
+We used the following services: Bucket, Cloudbuild, CloudRun, Artifact Registry. Bucket is used for storing logs, monitoring and actual data referenced by DVC.
+Cloudbuild automatically builds containers using Dockerfiles and stores them in Artifact Registry. We used CloudRun to deploy our inference server and it runs the API Docker Image.
 
 ### Question 18
 
@@ -381,7 +400,9 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 18 fill here ---
+Because we did not train our model in the cloud but rather locally and used the CloudRun for hosting the inference server, the only moment we had briefly encountered Compute engine
+was when building docker images in the CloudBuild as it spins up a vm to run the building process. If we were to fully utilize the Compute engine we would most likely try to get quota for the GPU virtual machines
+as that would allow us to run even faster training. Also many Google Cloud services try to abstract the fact that they use Compute Engine under the hood providing more user friendly interfaces.
 
 ### Question 19
 
@@ -390,7 +411,8 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 19 fill here ---
+![Buckets overview](figures/bucket1.png)
+![Specific bucket](figures/bucket2.png)
 
 ### Question 20
 
@@ -399,7 +421,7 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 20 fill here ---
+![Artifact registry](figures/registry.png)
 
 ### Question 21
 
@@ -408,7 +430,7 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 21 fill here ---
+![CloudBuild](figures/cloudbuild.png)
 
 ### Question 22
 
@@ -423,7 +445,10 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 22 fill here ---
+We were planning to train our model in the cloud, however in the end we decided not to for a few following reasons. First and foremost, the problem and dataset that we selected for this project (natural langugage processing task)
+were not problem for a pretrained transformer from hugging face with the classifier head attached on top of it. Because of that our first experiment result in a model that aced through benchmarks both on train and test sets. Because of that we had no reason to do multiple
+of experiments which would probably force to use cloud for time efficiency. Moreover, the actual training time was also not a terrible one, with around 30 minutes. Training in the cloud would be required if the project involved automatic/on-demand retraining of the model
+using new data, however in our simplified case we just used a static dataset from kaggle.
 
 ## Deployment
 
@@ -505,7 +530,11 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 27 fill here ---
+As it currently stands the total cloud cost up-to-date is 13.5$, where the actually the majority of that (over 13$) comes from container registry vulnerability scanning feature that we enabled for test.
+The second most expensive service is the CloudRun used for hosting inference server, which for now only costed 0.4$. In general working in the cloud went pretty smoothly, thanks to the guides that we had available in the course.
+But unfortunately, the UI and UX of GoogleCloud is horrible. Things are hidden, slow, unintuitive, unresponsive, costs are also not that easy to estimate right away. Additionally, debugging issues that only appear in the cloud
+is not fun at all, but this is the reality we live in and we have to deal with it :)
+
 
 ### Question 28
 
