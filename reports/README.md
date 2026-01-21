@@ -111,9 +111,9 @@ will check the repositories and the code to verify your answers.
 
 * [ ] Write some documentation for your application (M32)
 * [ ] Publish the documentation to GitHub Pages (M32)
-* [ ] Revisit your initial project description. Did the project turn out as you wanted?
-* [ ] Create an architectural diagram over your MLOps pipeline
-* [ ] Make sure all group members have an understanding about all parts of the project
+* [x] Revisit your initial project description. Did the project turn out as you wanted?
+* [x] Create an architectural diagram over your MLOps pipeline
+* [x] Make sure all group members have an understanding about all parts of the project
 * [x] Uploaded all your code to GitHub
 
 ## Group information
@@ -203,7 +203,12 @@ The overall structure of the product is centered around `src` containing the act
 >
 > Answer:
 
---- question 6 fill here ---
+We used ruff for both linting and formatting code style. Type hints are enforced throughout the codebase using Python's typing module, with pyright configured in pre-commit hooks to catch type errors before commits. Documentation follows Google-style docstrings for all functions and classes, with mkdocs configured to build documentation from markdown files.
+
+These concepts are critical in larger projects. Code formatting ensures consistency across team members, reducing cognitive load during code reviews. Linting catches common errors (unused imports, undefined variables) automatically. Typing prevents runtime errors by validating function signatures at development time.
+
+In our project, these tools are enforced in CI/CD via uv run ruff check . --fix and uv run pre-commit run --all-files, ensuring every commit meets quality standards before merging to main. This scales development: new contributors can understand APIs quickly, and bugs are caught earlier when code is uniform and type-safe.
+
 
 ## Version control
 
@@ -228,8 +233,13 @@ The test suite contains five focused tests covering data, model, and API. Data t
 >
 > Answer:
 
-@TODO too short
 The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests.
+
+Code coverage measures how much code is executed during testing, not whether that code is correct. A test can run a line of code without actually validating its behavior. For example, a test could execute a function that returns an incorrect value but still count toward coverage if the assertion doesn't catch it. Additionally, coverage metrics often miss edge cases, integration failures between components, and production-specific issues like concurrency bugs or memory leaks that only manifest under load.
+
+Even at 100% coverage, critical gaps remain. First, we may not test all logical branches (e.g., error handling paths in exception cases). Second, tests can be poorly written, they may test implementation details rather than behavior, making the code fragile to refactoring. Third, coverage doesn't measure test quality; a test that passes trivially counts the same as a rigorous one.
+
+In our project, our 58% coverage focuses on critical paths: data loading, model construction, training steps, and API endpoints. We prioritized testing high-risk areas (transformers, GCS integration, FastAPI routes) over lower-risk utility functions. This pragmatic approach provides confidence in core functionality while acknowledging that perfect coverage would yield diminishing returns. To truly ensure reliability, we complement coverage with manual testing, code reviews, integration tests, and production monitoring to catch issues that unit tests miss.
 
 ### Question 9
 
@@ -244,8 +254,11 @@ The total code coverage of code is 58%, which includes all our source code apart
 >
 > Answer:
 
-@TODO too short
-We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed.
+We made use of both branches and pull requests throughout our project, following a feature branch workflow to maintain code quality and facilitate collaboration. Each major task or feature (e.g., CI/CD setup, API development, monitoring implementation) had its own dedicated branch created from main. Team members worked independently on their branches, committing regularly without blocking others.
+
+When a feature was complete, we opened a pull request to main. Every PR required at least one approval from another team member and had to pass all automated checks: unit tests via pytest, linting with ruff, pre-commit hooks, and Docker builds. This gating mechanism prevented broken or non-compliant code from reaching production. Code reviews caught logic errors, style violations, and architectural issues before merge, improving overall code quality and knowledge sharing across the team.
+
+Branch protection rules on main enforced these requirements, no direct pushes were allowed, and PRs could not merge until reviews and CI passed. This workflow scaled well for our team of four: it eliminated merge conflicts through isolation, ensured every commit to main was tested and reviewed, and created a clear audit trail of who changed what and why. Additionally, it allowed parallel development; team members could work on independent features simultaneously without interfering with each other, significantly improving our development velocity.
 
 
 ### Question 10
@@ -618,6 +631,8 @@ Our system architecture follows a complete MLOps pipeline from local development
 
 // Please add all of you here your contributions
 **Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
+
+**Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
 
 All members contributed to code reviews, testing, and documentation.
 We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
