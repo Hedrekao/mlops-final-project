@@ -121,7 +121,9 @@ will check the repositories and the code to verify your answers.
 ### Question 1
 > **Enter the group number you signed up on <learn.inside.dtu.dk>**
 >
-> Answer: 103
+> Answer: 
+
+103
 
 
 ### Question 2
@@ -131,7 +133,9 @@ will check the repositories and the code to verify your answers.
 >
 > *sXXXXXX, sXXXXXX, sXXXXXX*
 >
-> Answer: s250695, s253811, s250778, s250779
+> Answer: 
+
+s250695, s253811, s250778, s250779
 
 ### Question 3
 > **Did you end up using any open-source frameworks/packages not covered in the course during your project? If so**
@@ -515,9 +519,9 @@ Returns `{"label":"fake","score":0.799...}`. Health, monitoring stats/report, an
 >
 > Answer:
 
-For unit testing we used pytest with FastAPI's TestClient. We wrote 20 focused tests in `tests/test_api.py` covering: root/health/predict endpoints (response structure, status codes), edge cases (empty text, whitespace, unicode, special characters, long text), valid label/score ranges, and integration scenarios. All 20 tests passed successfully.
+For unit testing we used pytest with FastAPI's TestClient. We wrote 20 tests in `tests/test_api.py` covering: root/health/predict endpoints (response structure, status codes), edge cases (empty text, whitespace, unicode, special characters, long text), valid label/score ranges, and integration scenarios. All 20 tests passed successfully.
 
-For load testing we used Locust against the deployed Cloud Run service. We simulated 10 concurrent users with weighted endpoints: `/predict` (weight 10), `/` (weight 2), `/health` (weight 1), `/monitoring/stats` (weight 1), `/monitoring/report` variants (weight 1). Over 2 minutes 53 seconds, we generated 664 total requests with 0 failures. Key results: `/predict` handled 447 requests at avg 86.94ms (50th percentile 77ms, 95th percentile 150ms), achieving 2.58 RPS. Root and health endpoints averaged 33ms and 30ms respectively. Throughput reached 3.83 RPS peak. The API never crashed and gracefully handled all concurrent traffic, though `/monitoring/stats` is slower (7271ms avg) due to GCS reads. Overall the deployment is stable and responsive for the core prediction workload.
+For load testing we used Locust against the deployed Cloud Run service. We simulated 10 concurrent users with weighted endpoints: `/predict` (weight 10), `/` (weight 2), `/health` (weight 1), `/monitoring/stats` (weight 1), `/monitoring/report` variants (weight 1). Over 3 minutes, we generated 664 total requests with 0 failures. Key results: `/predict` handled 447 requests at avg 86.94ms (50th percentile 77ms, 95th percentile 150ms), achieving 2.58 RPS. Root and health endpoints averaged 33ms and 30ms respectively. Throughput reached 3.83 RPS peak. The API never crashed and gracefully handled all concurrent traffic, though `/monitoring/stats` is slower (7271ms avg) due to GCS reads. Overall the deployment is stable and responsive for the core prediction workload.
 
 ### Question 26
 
@@ -571,7 +575,7 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 >
 > Answer:
 
---- question 28 fill here ---
+We did not add any extra features beyond the required scope. Instead, we focused on making sure the core parts of the project were solid and worked well end to end. We chose to skip optional additions like a frontend or more advanced infrastructure, as our main priority was building a stable and reliable pipeline rather than adding extra components.
 
 ### Question 29
 
@@ -634,9 +638,12 @@ Our system architecture follows a complete MLOps pipeline from local development
 > Answer:
 
 // Please add all of you here your contributions
+
 **Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
 
 **Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
+
+**Student s250778** was responsible for creating the project description in the main README.md. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application with Docker, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing using Locust.
 
 All members contributed to code reviews, testing, and documentation.
 We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
