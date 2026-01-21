@@ -1,4 +1,6 @@
 from pathlib import Path
+import time
+import multiprocessing
 
 import pandas as pd
 import torch
@@ -143,32 +145,46 @@ class JobPostingsDataModule(L.LightningDataModule):
                 labels=torch.load(self.processed_path / "test_labels.pt", weights_only=True),
             )
 
+    def _get_dataloader_kwargs(self, shuffle: bool = False) -> dict:
+        """Get optimized DataLoader kwargs following DTU MLOps S9.
+
+        Implements distributed data loading best practices:
+        - pin_memory: Lock data in host memory for faster GPU transfer
+        - persistent_workers: Keep workers alive between epochs
+        - prefetch_factor: Control batch queue size
+
+        Returns:
+            Dictionary of optimized kwargs for DataLoader.
+        """
+        kwargs = {
+            "batch_size": self.batch_size,
+            "shuffle": shuffle,
+            "num_workers": self.num_workers,
+        }
+
+        # GPU optimization: pin memory for faster host->device transfer
+        gpu_available = torch.cuda.is_available()
+        if self.num_workers > 0:
+            kwargs["pin_memory"] = gpu_available
+            kwargs["prefetch_factor"] = 2
+            kwargs["persistent_workers"] = True
+
+        return kwargs
+
     def train_dataloader(self) -> DataLoader:
-        """Return training dataloader."""
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
-        )
+        """Return training dataloader with optimized settings."""
+        kwargs = self._get_dataloader_kwargs(shuffle=True)
+        return DataLoader(self.train_dataset, **kwargs)
 
     def val_dataloader(self) -> DataLoader:
-        """Return validation dataloader."""
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-        )
+        """Return validation dataloader with optimized settings."""
+        kwargs = self._get_dataloader_kwargs(shuffle=False)
+        return DataLoader(self.val_dataset, **kwargs)
 
     def test_dataloader(self) -> DataLoader:
-        """Return test dataloader."""
-        return DataLoader(
-            self.test_dataset,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers,
-        )
+        """Return test dataloader with optimized settings."""
+        kwargs = self._get_dataloader_kwargs(shuffle=False)
+        return DataLoader(self.test_dataset, **kwargs)
 
 
 if __name__ == "__main__":
@@ -178,3 +194,159 @@ if __name__ == "__main__":
     logger.info("Train batches: {}", len(dm.train_dataloader()))
     logger.info("Val batches: {}", len(dm.val_dataloader()))
     logger.info("Test batches: {}", len(dm.test_dataloader()))
+
+
+# ============================================================================
+# DISTRIBUTED DATA LOADING - DTU MLOps S9
+# ============================================================================
+# Following: https://skaftenicki.github.io/dtu_mlops/s9_scalable_applications/data_loading/
+
+
+def get_cpu_cores() -> int:
+    """Get the number of CPU cores available.
+
+    Returns:
+        Number of CPU cores.
+    """
+    cores = multiprocessing.cpu_count()
+    logger.info(f"Number of cores: {cores}, Number of threads: {2 * cores}")
+    return cores
+
+
+def benchmark_dataloader(
+    dataloader: DataLoader,
+    num_workers: int,
+    num_batches: int = 100,
+    num_runs: int = 5,
+) -> dict[str, float]:
+    """Benchmark dataloader performance with different worker configurations.
+
+    Following the DTU MLOps exercise on distributed data loading.
+
+    Args:
+        dataloader: DataLoader to benchmark.
+        num_workers: Number of workers used.
+        num_batches: Number of batches to process per run.
+        num_runs: Number of times to repeat the benchmark.
+
+    Returns:
+        Dictionary with timing statistics (mean, std, min, max).
+    """
+    times = []
+
+    for run in range(num_runs):
+        start_time = time.time()
+        batch_count = 0
+
+        for batch in dataloader:
+            batch_count += 1
+            if batch_count >= num_batches:
+                break
+
+        elapsed = time.time() - start_time
+        times.append(elapsed)
+        logger.info(f"Run {run + 1}/{num_runs} with {num_workers} workers: {elapsed:.2f}s")
+
+    return {
+        "num_workers": num_workers,
+        "mean": sum(times) / len(times),
+        "std": (sum((x - (sum(times) / len(times))) ** 2 for x in times) / len(times)) ** 0.5,
+        "min": min(times),
+        "max": max(times),
+    }
+
+
+def benchmark_different_workers(
+    datamodule: JobPostingsDataModule,
+    max_workers: int | None = None,
+    num_batches: int = 100,
+    num_runs: int = 5,
+) -> list[dict]:
+    """Benchmark dataloader with different numbers of workers.
+
+    This demonstrates the trade-off between parallelization and communication
+    overhead as discussed in the DTU MLOps course.
+
+    Args:
+        datamodule: JobPostingsDataModule instance.
+        max_workers: Maximum number of workers to test. If None, use number of cores.
+        num_batches: Number of batches per run.
+        num_runs: Number of benchmark runs.
+
+    Returns:
+        List of dictionaries with timing results for each worker configuration.
+    """
+    if max_workers is None:
+        max_workers = get_cpu_cores()
+
+    results = []
+
+    logger.info("Starting dataloader benchmarking...")
+    logger.info(f"Testing with 1 to {max_workers} workers")
+    logger.info(f"Each test: {num_batches} batches x {num_runs} runs")
+
+    for num_workers in range(0, max_workers + 1):
+        logger.info(f"\n--- Testing with {num_workers} workers ---")
+
+        # Create dataloader with specific number of workers
+        train_loader = DataLoader(
+            datamodule.train_dataset,
+            batch_size=datamodule.batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+
+        result = benchmark_dataloader(train_loader, num_workers, num_batches, num_runs)
+        results.append(result)
+
+        logger.info(f"Mean: {result['mean']:.2f}s ± {result['std']:.2f}s")
+
+    return results
+
+
+def create_optimized_dataloader(
+    dataset: JobPostingsDataset,
+    batch_size: int,
+    num_workers: int | None = None,
+    shuffle: bool = True,
+    use_pin_memory: bool = True,
+    use_persistent_workers: bool = True,
+) -> DataLoader:
+    """Create an optimized DataLoader following DTU MLOps best practices.
+
+    Key optimizations:
+    - num_workers: Parallel data loading (set based on CPU cores)
+    - pin_memory: Lock data in host memory for faster GPU transfer
+    - persistent_workers: Reduce worker startup overhead
+    - prefetch_factor: Control queue size for pipelining
+
+    Args:
+        dataset: Dataset to load.
+        batch_size: Batch size.
+        num_workers: Number of workers. If None, use CPU count / 2.
+        shuffle: Whether to shuffle data.
+        use_pin_memory: Whether to pin memory (useful for GPU training).
+        use_persistent_workers: Keep workers alive between epochs.
+
+    Returns:
+        Optimized DataLoader.
+    """
+    if num_workers is None:
+        num_workers = max(0, get_cpu_cores() // 2)
+
+    logger.info(f"Creating DataLoader with {num_workers} workers (batch_size={batch_size})")
+
+    kwargs = {
+        "batch_size": batch_size,
+        "shuffle": shuffle,
+        "num_workers": num_workers,
+    }
+
+    # pin_memory is beneficial when using GPU
+    if num_workers > 0:
+        kwargs["pin_memory"] = use_pin_memory
+        kwargs["prefetch_factor"] = 2
+        if use_persistent_workers:
+            kwargs["persistent_workers"] = True
+
+    return DataLoader(dataset, **kwargs)
