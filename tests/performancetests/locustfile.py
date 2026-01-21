@@ -37,10 +37,7 @@ class PostingsClassifierUser(HttpUser):
         """Test the predict endpoint with sample job posting text."""
         text = random.choice(self.sample_texts)
         self.client.post(
-            "/predict",
-            json={"text": text},
-            headers={"Content-Type": "application/json"},
-            name="POST /predict"
+            "/predict", json={"text": text}, headers={"Content-Type": "application/json"}, name="POST /predict"
         )
 
     @task(1)
