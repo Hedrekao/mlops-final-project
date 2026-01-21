@@ -15,6 +15,6 @@ pytest==9.0.2
 evidently>=1.7.0
 requests>=2.31.0
 google-cloud-storage>=2.10.0
-
+locust==2.43.1
 # Install the local package
 -e .

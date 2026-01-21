@@ -44,6 +44,7 @@ dependencies = [
     "anyio>=4.12.1",
     "prometheus-client>=0.24.1",
     "markdown>=3.10",
+    "locust>=2.43.1",
 ]
 
 
