@@ -315,7 +315,15 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 12 fill here ---
+We used Hydra for experiment configuration management. Configuration files are stored in configs/ with subdirectories for model/, trainer/, and data/ settings. To run an experiment with default config:
+
+uv run python src/postings_classifier/train.py
+
+To override specific parameters from the command line:
+
+uv run python src/postings_classifier/train.py trainer.lr=1e-4 trainer.batch_size=32 trainer.max_epochs=20
+
+Hydra automatically merges configs, validates values, and logs all parameters to outputs/ for full reproducibility.
 
 ### Question 13
 
