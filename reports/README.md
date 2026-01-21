@@ -111,9 +111,9 @@ will check the repositories and the code to verify your answers.
 
 * [ ] Write some documentation for your application (M32)
 * [ ] Publish the documentation to GitHub Pages (M32)
-* [ ] Revisit your initial project description. Did the project turn out as you wanted?
-* [ ] Create an architectural diagram over your MLOps pipeline
-* [ ] Make sure all group members have an understanding about all parts of the project
+* [x] Revisit your initial project description. Did the project turn out as you wanted?
+* [x] Create an architectural diagram over your MLOps pipeline
+* [x] Make sure all group members have an understanding about all parts of the project
 * [x] Uploaded all your code to GitHub
 
 ## Group information
@@ -199,7 +199,12 @@ The overall structure of the product is centered around `src` containing the act
 >
 > Answer:
 
---- question 6 fill here ---
+We used ruff for both linting and formatting code style. Type hints are enforced throughout the codebase using Python's typing module, with pyright configured in pre-commit hooks to catch type errors before commits. Documentation follows Google-style docstrings for all functions and classes, with mkdocs configured to build documentation from markdown files.
+
+These concepts are critical in larger projects. Code formatting ensures consistency across team members, reducing cognitive load during code reviews. Linting catches common errors (unused imports, undefined variables) automatically. Typing prevents runtime errors by validating function signatures at development time.
+
+In our project, these tools are enforced in CI/CD via uv run ruff check . --fix and uv run pre-commit run --all-files, ensuring every commit meets quality standards before merging to main. This scales development: new contributors can understand APIs quickly, and bugs are caught earlier when code is uniform and type-safe.
+
 
 ## Version control
 
@@ -224,8 +229,13 @@ The test suite contains five focused tests covering data, model, and API. Data t
 >
 > Answer:
 
-@TODO too short
 The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests.
+
+Code coverage measures how much code is executed during testing, not whether that code is correct. A test can run a line of code without actually validating its behavior. For example, a test could execute a function that returns an incorrect value but still count toward coverage if the assertion doesn't catch it. Additionally, coverage metrics often miss edge cases, integration failures between components, and production-specific issues like concurrency bugs or memory leaks that only manifest under load.
+
+Even at 100% coverage, critical gaps remain. First, we may not test all logical branches (e.g., error handling paths in exception cases). Second, tests can be poorly written, they may test implementation details rather than behavior, making the code fragile to refactoring. Third, coverage doesn't measure test quality; a test that passes trivially counts the same as a rigorous one.
+
+In our project, our 58% coverage focuses on critical paths: data loading, model construction, training steps, and API endpoints. We prioritized testing high-risk areas (transformers, GCS integration, FastAPI routes) over lower-risk utility functions. This pragmatic approach provides confidence in core functionality while acknowledging that perfect coverage would yield diminishing returns. To truly ensure reliability, we complement coverage with manual testing, code reviews, integration tests, and production monitoring to catch issues that unit tests miss.
 
 ### Question 9
 
@@ -240,8 +250,11 @@ The total code coverage of code is 58%, which includes all our source code apart
 >
 > Answer:
 
-@TODO too short
-We made use of both branches and PRs in our project. In our group, each task had a branch, we followed feature branch approach, for example a continues integration was a branch, after that was finished a PR was made to all group members and at least 1 review was required. We only merged after approval and tests passed.
+We made use of both branches and pull requests throughout our project, following a feature branch workflow to maintain code quality and facilitate collaboration. Each major task or feature (e.g., CI/CD setup, API development, monitoring implementation) had its own dedicated branch created from main. Team members worked independently on their branches, committing regularly without blocking others.
+
+When a feature was complete, we opened a pull request to main. Every PR required at least one approval from another team member and had to pass all automated checks: unit tests via pytest, linting with ruff, pre-commit hooks, and Docker builds. This gating mechanism prevented broken or non-compliant code from reaching production. Code reviews caught logic errors, style violations, and architectural issues before merge, improving overall code quality and knowledge sharing across the team.
+
+Branch protection rules on main enforced these requirements, no direct pushes were allowed, and PRs could not merge until reviews and CI passed. This workflow scaled well for our team of four: it eliminated merge conflicts through isolation, ensured every commit to main was tested and reviewed, and created a clear audit trail of who changed what and why. Additionally, it allowed parallel development; team members could work on independent features simultaneously without interfering with each other, significantly improving our development velocity.
 
 
 ### Question 10
@@ -348,7 +361,11 @@ be on the same git commit as when experiment was run.
 >
 > Answer:
 
---- question 15 fill here ---
+We developed three Docker images: one for API/inference deployment, one for training, and one for FastAPI serving.
+To run the API image locally:
+`docker build -f dockerfiles/api.dockerfile -t postings-api:latest . && docker run -p 8000:8000 postings-api:latest`.
+The training image (`train.dockerfile`) installs all dependencies including GPU support (PyTorch, Lightning) and can be invoked with `docker run -v $(pwd)/data:/app/data postings-train:latest`. Both images are built automatically via
+Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry. `docker-compose.yml` enables local multi-container orchestration for development.
 
 ### Question 16
 
@@ -363,7 +380,7 @@ be on the same git commit as when experiment was run.
 >
 > Answer:
 
---- question 16 fill here ---
+We used print statements and logging with `loguru` to trace execution flow, or some team members used VS Code's built-in debugger during development. We extensively used PyTorch Lightning's logging and validation callbacks to catch issues early during training. We did implement profiling via PyTorch Profiler (configured in `configs/trainer/default.yaml`) to identify performance bottlenecks. The profiler tracks CPU/GPU time and memory allocation per operation. Additionally, we used `loguru` for structured logging across all modules (training, inference, API) to surface errors and warnings. For API debugging, we used FastAPI's built-in documentation (`/docs`) and manual curl requests. Cloud deployment bugs were debugged via Cloud Logging and local Docker testing before pushing to production.
 
 ## Working in the cloud
 
@@ -515,7 +532,7 @@ For load testing we used Locust against the deployed Cloud Run service. We simul
 >
 > Answer:
 
---- question 26 fill here ---
+Yes, we implemented two-layer monitoring. **System metrics**: FastAPI `/predict` endpoint includes Prometheus instrumentation tracking request count, error rate, latency distribution, and input text length. These metrics are exposed at `/metrics` and scraped by Cloud Run's Managed Service for Prometheus sidecar every 30 seconds, pushing to Google Cloud Monitoring for real-time dashboards and alerting. **Prediction monitoring**: The `/monitoring/report` endpoint displays HTML dashboards showing label distributions, confidence scores, and recent predictions. All predictions are logged to GCS (`predictions/prediction_*.json`) with timestamps for historical analysis. Together, these layers continuously measure system health, track inference performance, maintain prediction audit trails, and enable detection of anomalies that could indicate model degradation or data distribution shifts.
 
 ## Overall discussion of project
 
@@ -571,7 +588,20 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 >
 > Answer:
 
---- question 29 fill here ---
+Answer:
+
+![MLOPS Architecture](figures/MLOPS_diagram.png)
+
+Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring. **Local development**: Team members clone the repository, set up the environment with `uv sync`, and develop code Tests (pytest) validate data loading, model training, and API functionality locally before pushing.
+
+**Data versioning**: Training data (`data/raw/fake_real_job_postings_3000x25.csv`) is versioned using DVC with remote storage configured at `gs://jop-postings-mlops-data/dvc-store`. This allows team members to track dataset changes while keeping the Git repository lightweight.
+
+**CI/CD pipeline**: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, and pre-commit hooks. If all checks pass and the PR is approved, code merges to main, automatically triggering Cloud Build to construct Docker images (training, API, FastAPI) and push them to Google Artifact Registry.
+
+**Cloud deployment**: The API image is deployed to Cloud Run, which auto-scales based on traffic. The Prometheus sidecar is configured on the Cloud Run service for Google Cloud Monitoring for real-time dashboards and alerting.
+
+**Data flow**: Input requests hit the `/predict` endpoint, which loads the PyTorch model and returns predictions. Every prediction is logged as JSON to Google Cloud Storage (`predictions/prediction_*.json`).
+
 
 ### Question 30
 
@@ -603,4 +633,10 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 > *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
 > Answer:
 
-**Student s250778** was responsible for creating the project description and overall motivation in the main README.md. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application with Docker, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented comprehensive API testing with pytest (20 unit tests covering edge cases and integration scenarios) and performed load testing using Locust to validate deployment stability.
+// Please add all of you here your contributions
+**Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
+
+**Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
+
+All members contributed to code reviews, testing, and documentation.
+We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
