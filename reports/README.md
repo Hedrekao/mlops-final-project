@@ -358,7 +358,17 @@ be on the same git commit as when experiment was run.
 >
 > Answer:
 
---- question 14 fill here ---
+As already mentioned due to the superb model performance we haven't experimented that much, but we still were saving information to W&B during training runs.
+We were saving entire Hydra configs that were used during the run so that, if someone would like to reproduce the result it would have been obvious what were the parameters of training.
+When it comes to measures we were tracking train/val loss graph (at each step), number of epochs, accuracy (at the end of epoch), as well as f1 score for val dataset.
+After the training evaluation on test set was also saved. All the logs that were printed to console during the training were also automatically saved to W&B
+These metrics allow us to get understanding of how the training run performs, is our model overfitting/underfitting, we can compare different sets of runs.
+
+In Hydra W&B config we also exposed an option to save the best model checkpoints (weights) as artifacts, that way they could be then loaded automatically in serving deployment directly from there, using a specific tag (we have not in the end implemented this integration and instead just put model weights directly to the bucket).
+Moreover, there is an option to log model parameters and their gradients during the training, that could be useful information during debugging process if we suspect that we might have issue with vanishing/exploding gradients and there is some numeric unstability.
+
+![Image 1](figures/wandb1.png)
+![Image 2](figures/wandb2.png)
 
 ### Question 15
 
@@ -634,7 +644,14 @@ There is also a dashboard available to can be used to check against data drift
 >
 > Answer:
 
---- question 30 fill here ---
+We believe that one of the biggest challenges in the project was wrapping your head around using cloud and orientating yourself in the madness of Google Cloud console. However, in the end it was just a matter of going through options, finding an order of things to do and following great course instructions.
+Another problem was related to failing CI workflows, for some of them it was matter of certain permissions, but in general the idea of having to push code to check if the workflow works well was quite annoying.
+
+When it comes to actual writing code, we haven't had any major blockers and issues, everything was going rather smoothly and if anyone had some problem there were always other people willing to help
+
+To sum up we think that the biggest amount of time we spend in the project was on various integrations and more specifically making sure that all of them work nicely together, whether it was automatic cloud deployments with CI pipeline with DVC and so on. Entire MLOPS consists of many moving elements,
+that in the end just need to work together. We think the best way to work through these issues is simply to split work into small tasks and do one by another, without trying to create entire infrastructure in one go.
+
 
 ### Question 31
 
@@ -654,13 +671,13 @@ There is also a dashboard available to can be used to check against data drift
 
 // Please add all of you here your contributions
 
-**Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
+**Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks.
 
-**Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
+**Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
 
-**Student s250778** was responsible for creating the project description in the main README.md. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application with Docker, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing using Locust.
+**Student s250778** was responsible for creating the project description. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing.
 
-**Student 250779** @Me
+**Student 250779** was responsible for implementing the training loop, data preprocessing, DVC, integration with Hydra and Lightning as well as connecting the training to wandb to collect metrics and logs from training runs, setting up cloud project (IAM), bucket storage, cloudbuild.
 
 All members contributed to code reviews, testing, and documentation.
-We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
+We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating parts of code.
