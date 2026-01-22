@@ -20,4 +20,9 @@ COPY README.md LICENSE ./
 # Install project
 RUN uv sync --frozen --no-dev
 
+# W&B configuration - these can be overridden at runtime
+# WANDB_API_KEY must be provided at runtime (via --env or secrets)
+ENV WANDB_PROJECT="mlops-course"
+ENV WANDB_LOG_MODEL="true"
+
 ENTRYPOINT ["uv", "run", "python", "-m", "postings_classifier.train"]

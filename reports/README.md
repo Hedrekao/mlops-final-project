@@ -121,7 +121,7 @@ will check the repositories and the code to verify your answers.
 ### Question 1
 > **Enter the group number you signed up on <learn.inside.dtu.dk>**
 >
-> Answer: 
+> Answer:
 
 103
 
@@ -133,7 +133,7 @@ will check the repositories and the code to verify your answers.
 >
 > *sXXXXXX, sXXXXXX, sXXXXXX*
 >
-> Answer: 
+> Answer:
 
 s250695, s253811, s250778, s250779
 
@@ -233,13 +233,12 @@ The test suite contains five focused tests covering data, model, and API. Data t
 >
 > Answer:
 
-The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests.
-
-Code coverage measures how much code is executed during testing, not whether that code is correct. A test can run a line of code without actually validating its behavior. For example, a test could execute a function that returns an incorrect value but still count toward coverage if the assertion doesn't catch it. Additionally, coverage metrics often miss edge cases, integration failures between components, and production-specific issues like concurrency bugs or memory leaks that only manifest under load.
-
-Even at 100% coverage, critical gaps remain. First, we may not test all logical branches (e.g., error handling paths in exception cases). Second, tests can be poorly written, they may test implementation details rather than behavior, making the code fragile to refactoring. Third, coverage doesn't measure test quality; a test that passes trivially counts the same as a rigorous one.
-
-In our project, our 58% coverage focuses on critical paths: data loading, model construction, training steps, and API endpoints. We prioritized testing high-risk areas (transformers, GCS integration, FastAPI routes) over lower-risk utility functions. This pragmatic approach provides confidence in core functionality while acknowledging that perfect coverage would yield diminishing returns. To truly ensure reliability, we complement coverage with manual testing, code reviews, integration tests, and production monitoring to catch issues that unit tests miss.
+The total code coverage of code is 58%, which includes all our source code apart from tests folder.
+We are far from 100% coverage of our code, but even 100% test coverage does not guarantee a bug free code, it is only as good as the tests.
+Code coverage measures how much code is executed during testing, not whether that code is correct.
+A test can run a line of code without actually validating its behavior.
+For example, a test could execute a function that returns an incorrect value but still count toward coverage if the assertion doesn't catch it.
+Additionally, coverage metrics often miss edge cases, integration failures between components, and production-specific issues like concurrency bugs or memory leaks that only manifest under load.
 
 ### Question 9
 
@@ -254,11 +253,12 @@ In our project, our 58% coverage focuses on critical paths: data loading, model 
 >
 > Answer:
 
-We made use of both branches and pull requests throughout our project, following a feature branch workflow to maintain code quality and facilitate collaboration. Each major task or feature (e.g., CI/CD setup, API development, monitoring implementation) had its own dedicated branch created from main. Team members worked independently on their branches, committing regularly without blocking others.
+We made use of both branches and pull requests throughout our project, following a feature branch workflow to maintain code quality and facilitate collaboration.
+Each major task or feature (e.g., CI/CD setup, API development, monitoring implementation) had its own dedicated branch created from main.
+Team members worked independently on their branches, committing regularly without blocking others.
 
-When a feature was complete, we opened a pull request to main. Every PR required at least one approval from another team member and had to pass all automated checks: unit tests via pytest, linting with ruff, pre-commit hooks, and Docker builds. This gating mechanism prevented broken or non-compliant code from reaching production. Code reviews caught logic errors, style violations, and architectural issues before merge, improving overall code quality and knowledge sharing across the team.
-
-Branch protection rules on main enforced these requirements, no direct pushes were allowed, and PRs could not merge until reviews and CI passed. This workflow scaled well for our team of four: it eliminated merge conflicts through isolation, ensured every commit to main was tested and reviewed, and created a clear audit trail of who changed what and why. Additionally, it allowed parallel development; team members could work on independent features simultaneously without interfering with each other, significantly improving our development velocity.
+When a feature was complete, we opened a pull request to main. Every PR required at least one approval and had to pass all automated checks: unit tests, linting. This gating mechanism prevented broken or non-compliant code from reaching production.
+Code reviews caught logic errors, style violations, and architectural issues before merge, improving overall code quality and knowledge sharing across the team.
 
 
 ### Question 10
@@ -358,7 +358,17 @@ be on the same git commit as when experiment was run.
 >
 > Answer:
 
---- question 14 fill here ---
+As already mentioned due to the superb model performance we haven't experimented that much, but we still were saving information to W&B during training runs.
+We were saving entire Hydra configs that were used during the run so that, if someone would like to reproduce the result it would have been obvious what were the parameters of training.
+When it comes to measures we were tracking train/val loss graph (at each step), number of epochs, accuracy (at the end of epoch), as well as f1 score for val dataset.
+After the training evaluation on test set was also saved. All the logs that were printed to console during the training were also automatically saved to W&B
+These metrics allow us to get understanding of how the training run performs, is our model overfitting/underfitting, we can compare different sets of runs.
+
+In Hydra W&B config we also exposed an option to save the best model checkpoints (weights) as artifacts, that way they could be then loaded automatically in serving deployment directly from there, using a specific tag (we have not in the end implemented this integration and instead just put model weights directly to the bucket).
+Moreover, there is an option to log model parameters and their gradients during the training, that could be useful information during debugging process if we suspect that we might have issue with vanishing/exploding gradients and there is some numeric unstability.
+
+![Image 1](figures/wandb1.png)
+![Image 2](figures/wandb2.png)
 
 ### Question 15
 
@@ -373,11 +383,15 @@ be on the same git commit as when experiment was run.
 >
 > Answer:
 
-We developed three Docker images: one for API/inference deployment, one for training, and one for FastAPI serving.
+We developed three Docker images: one for API/inference deployment, one for training.
 To run the API image locally:
 `docker build -f dockerfiles/api.dockerfile -t postings-api:latest . && docker run -p 8000:8000 postings-api:latest`.
 The training image (`train.dockerfile`) installs all dependencies including GPU support (PyTorch, Lightning) and can be invoked with `docker run -v $(pwd)/data:/app/data postings-train:latest`. Both images are built automatically via
-Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry. `docker-compose.yml` enables local multi-container orchestration for development.
+Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry.
+Additionally of pushing API image to the registry, there is a trigger that deployes it automatically to CloudRun
+`docker-compose.yml` enables local multi-container orchestration for development.
+
+Link to serving image: [here](https://github.com/Hedrekao/mlops-final-project/blob/main/dockerfiles/api.dockerfile)
 
 ### Question 16
 
@@ -600,19 +614,22 @@ We did not add any extra features beyond the required scope. Instead, we focused
 >
 > Answer:
 
-Answer:
-
 ![MLOPS Architecture](figures/MLOPS_diagram.png)
 
-Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring. **Local development**: Team members clone the repository, set up the environment with `uv sync`, and develop code Tests (pytest) validate data loading, model training, and API functionality locally before pushing.
+Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring.
+
+**Local development**: Team members clone the repository, set up the environment with `uv sync`, pull data using DVC and develop code.
+Tests (pytest) validate data loading, model training, and API functionality locally before pushing. Additionally there is pre-commit hook to check linting before even pushing the commit.
 
 **Data versioning**: Training data (`data/raw/fake_real_job_postings_3000x25.csv`) is versioned using DVC with remote storage configured at `gs://jop-postings-mlops-data/dvc-store`. This allows team members to track dataset changes while keeping the Git repository lightweight.
 
-**CI/CD pipeline**: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, and pre-commit hooks. If all checks pass and the PR is approved, code merges to main, automatically triggering Cloud Build to construct Docker images (training, API, FastAPI) and push them to Google Artifact Registry.
+**CI/CD pipeline**: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, data statistics workflow (to check quality of data). If all checks pass and the PR is approved, code merges to main,
+automatically triggering Cloud Build to construct Docker images (training, API) and push them to Google Artifact Registry, serving image is also automatically deployed to CloudRun.
 
 **Cloud deployment**: The API image is deployed to Cloud Run, which auto-scales based on traffic. The Prometheus sidecar is configured on the Cloud Run service for Google Cloud Monitoring for real-time dashboards and alerting.
 
 **Data flow**: Input requests hit the `/predict` endpoint, which loads the PyTorch model and returns predictions. Every prediction is logged as JSON to Google Cloud Storage (`predictions/prediction_*.json`).
+There is also a dashboard available to can be used to check against data drift
 
 
 ### Question 30
@@ -627,7 +644,14 @@ Our system architecture follows a complete MLOps pipeline from local development
 >
 > Answer:
 
---- question 30 fill here ---
+We believe that one of the biggest challenges in the project was wrapping your head around using cloud and orientating yourself in the madness of Google Cloud console. However, in the end it was just a matter of going through options, finding an order of things to do and following great course instructions.
+Another problem was related to failing CI workflows, for some of them it was matter of certain permissions, but in general the idea of having to push code to check if the workflow works well was quite annoying.
+
+When it comes to actual writing code, we haven't had any major blockers and issues, everything was going rather smoothly and if anyone had some problem there were always other people willing to help
+
+To sum up we think that the biggest amount of time we spend in the project was on various integrations and more specifically making sure that all of them work nicely together, whether it was automatic cloud deployments with CI pipeline with DVC and so on. Entire MLOPS consists of many moving elements,
+that in the end just need to work together. We think the best way to work through these issues is simply to split work into small tasks and do one by another, without trying to create entire infrastructure in one go.
+
 
 ### Question 31
 
@@ -647,11 +671,13 @@ Our system architecture follows a complete MLOps pipeline from local development
 
 // Please add all of you here your contributions
 
-**Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
+**Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks.
 
-**Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
+**Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
 
-**Student s250778** was responsible for creating the project description in the main README.md. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application with Docker, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing using Locust.
+**Student s250778** was responsible for creating the project description. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing.
+
+**Student 250779** was responsible for implementing the training loop, data preprocessing, DVC, integration with Hydra and Lightning as well as connecting the training to wandb to collect metrics and logs from training runs, setting up cloud project (IAM), bucket storage, cloudbuild.
 
 All members contributed to code reviews, testing, and documentation.
-We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
+We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating parts of code.
