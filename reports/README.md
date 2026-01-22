@@ -149,7 +149,7 @@ s250695, s253811, s250778, s250779
 >
 > Answer:
 
-We didn't really used any other libraries than the ones covered in the course.
+We didn't really use any other libraries than the ones covered in the course.
 
 ## Coding environment
 
@@ -169,7 +169,7 @@ We didn't really used any other libraries than the ones covered in the course.
 > Answer: uv sync
 
 We decided to use the uv to manage our dependencies. This was motivated by a great developer experience that comes from using uv as well as its speed when it comes to resolving dependencies. The version of python that should be used with the project is stored in `.python-version` file.
-Dependencies and their versions are stored automatically in `pyproject.toml` if added through `uv add <dep-nam>`, developers are also able to modify `pyproject.toml` themselves. A new team meber to get an exact copy of dev environment would just need to simply run (given of course that they
+Dependencies and their versions are stored automatically in `pyproject.toml` if added through `uv add <dep-nam>`, developers are also able to modify `pyproject.toml` themselves. A new team member to get an exact copy of dev environment would just need to simply run (given of course that they
 have uv already installed on their machine) `uv sync`.
 
 ### Question 5
@@ -188,7 +188,7 @@ have uv already installed on their machine) `uv sync`.
 
 We have used the template showcased during the lecture that also includes all the files related to agentic programming. We have used most of the folders except the `notebooks` as we started working on actual python files from the start. Additionally, we have added a `scripts` directory.
 This directory contains the python scripts that should be suppose to run from command line, without being core of actual application, specifically a script that is located there is being called during CI to generate a comment in each pull request showcasing various data statistics.
-The overall structure of the product is centered around `src` containing the actual code of application, `data` containing both raw and processed data as well as dvc info, `models` containing output of training runs, `dockerfiles` with Dockefiles, `.github` with all the CI related files and `tests` containing all the test
+The overall structure of the product is centered around `src` containing the actual code of application, `data` containing both raw and processed data as well as dvc info, `models` containing output of training runs, `dockerfiles` with Dockerfiles, `.github` with all the CI related files and `tests` containing all the test
 
 ### Question 6
 
@@ -221,7 +221,7 @@ In our project, these tools are enforced in CI/CD via uv run ruff check . --fix 
 
 > Answer:
 
-The test suite contains five focused tests covering data, model, and API. Data tests validate the dataset and datamodule load preprocessed tensors, correct lengths, tensor shapes, and dtypes. Model tests verify model construction, a forward pass, and a single optimization step to ensure training paths work. API tests exercise key endpoints (responses and status codes) to catch integration regressions. Together they provide smoke-level coverage of critical pipelines.
+The test suite contains 27 focused tests covering data, model, and API. Data tests validate dataset construction, tokenization, train/val/test splits, tensor shapes, and dtypes. Model tests verify model construction, forward pass, and optimizer configuration. API tests cover key endpoints including root, health, and predict with edge cases and integration scenarios. Together they provide comprehensive smoke-level coverage of critical pipelines.
 
 
 ### Question 8
@@ -274,8 +274,9 @@ Code reviews caught logic errors, style violations, and architectural issues bef
 >
 > Answer:
 
-We did make of use of DVC in the following way: instead of storing raw dataset (before preprocessing) we use data versioning for it. The actual dataset is stored in bucket in Google Cloud. In our actual case we only had single version of dataset as it was a simple synthethic dataset from kaggle.
-But DVC was still a nice improvement of life, as all the team members could simply pull the data when running project. Additionally, if we were to train the model in the cloud we would also not have to care about making sure the data is the we could simply pull it. The versioning of data itself would be more useful
+We did make use of DVC in the following way: instead of storing raw dataset (before preprocessing) we use data versioning for it. The actual dataset is stored in bucket in Google Cloud. In our actual case we only had single version of dataset as it was a simple synthetic dataset from kaggle.
+But DVC was still a nice improvement of life, as all the team members could simply pull the data when running project. Additionally, if we trained the model in the cloud, we wouldn’t have to worry about managing the data locally - we could simply pull it directly when needed.
+The versioning of data itself would be more useful
 if we would version actual preprocessed datasets, we would have different versions containing different feature preprocessing and that way we would be able to very easily swap between version.
 
 ### Question 11
@@ -383,12 +384,12 @@ Moreover, there is an option to log model parameters and their gradients during 
 >
 > Answer:
 
-We developed three Docker images: one for API/inference deployment, one for training.
+We developed two Docker images: one for API/inference deployment, one for training.
 To run the API image locally:
 `docker build -f dockerfiles/api.dockerfile -t postings-api:latest . && docker run -p 8000:8000 postings-api:latest`.
 The training image (`train.dockerfile`) installs all dependencies including GPU support (PyTorch, Lightning) and can be invoked with `docker run -v $(pwd)/data:/app/data postings-train:latest`. Both images are built automatically via
 Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry.
-Additionally of pushing API image to the registry, there is a trigger that deployes it automatically to CloudRun
+Additionally of pushing API image to the registry, there is a trigger that deploys it automatically to CloudRun
 `docker-compose.yml` enables local multi-container orchestration for development.
 
 Link to serving image: [here](https://github.com/Hedrekao/mlops-final-project/blob/main/dockerfiles/api.dockerfile)
@@ -439,7 +440,7 @@ Cloudbuild automatically builds containers using Dockerfiles and stores them in 
 >
 > Answer:
 
-Because we did not train our model in the cloud but rather locally and used the CloudRun for hosting the inference server, the only moment we had briefly encountered Compute engine
+Because we did not train our model in the cloud but rather locally and used the CloudRun for hosting the inference server, the only moment we had briefly encountered the Compute engine
 was when building docker images in the CloudBuild as it spins up a vm to run the building process. If we were to fully utilize the Compute engine we would most likely try to get quota for the GPU virtual machines
 as that would allow us to run even faster training. Also many Google Cloud services try to abstract the fact that they use Compute Engine under the hood providing more user friendly interfaces.
 
@@ -484,7 +485,7 @@ as that would allow us to run even faster training. Also many Google Cloud servi
 >
 > Answer:
 
-We were planning to train our model in the cloud, however in the end we decided not to for a few following reasons. First and foremost, the problem and dataset that we selected for this project (natural langugage processing task)
+We were planning to train our model in the cloud, however in the end we decided not to for a few following reasons. First and foremost, the problem and dataset that we selected for this project (natural language processing task)
 were not problem for a pretrained transformer from hugging face with the classifier head attached on top of it. Because of that our first experiment result in a model that aced through benchmarks both on train and test sets. Because of that we had no reason to do multiple
 of experiments which would probably force to use cloud for time efficiency. Moreover, the actual training time was also not a terrible one, with around 30 minutes. Training in the cloud would be required if the project involved automatic/on-demand retraining of the model
 using new data, however in our simplified case we just used a static dataset from kaggle.
@@ -578,7 +579,7 @@ Yes, we implemented two-layer monitoring. **System metrics**: FastAPI `/predict`
 > Answer:
 
 As it currently stands the total cloud cost up-to-date is 13.5$, where the actually the majority of that (over 13$) comes from container registry vulnerability scanning feature that we enabled for test.
-The second most expensive service is the CloudRun used for hosting inference server, which for now only costed 0.4$. In general working in the cloud went pretty smoothly, thanks to the guides that we had available in the course.
+The second most expensive service is the CloudRun used for hosting inference server, which for now only cost 0.4$. In general working in the cloud went pretty smoothly, thanks to the guides that we had available in the course.
 But unfortunately, the UI and UX of GoogleCloud is horrible. Things are hidden, slow, unintuitive, unresponsive, costs are also not that easy to estimate right away. Additionally, debugging issues that only appear in the cloud
 is not fun at all, but this is the reality we live in and we have to deal with it :)
 
@@ -675,7 +676,7 @@ that in the end just need to work together. We think the best way to work throug
 
 **Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
 
-**Student s250778** was responsible for creating the project description. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing.
+**Student s250778** was responsible for creating the project description and implementing the inference and deployment part of the system. This included designing and implementing the FastAPI inference service, handling model and tokenizer loading from cloud storage with fallback logic, and containerizing the application. Also, deployed the service to Cloud Run, tested the deployment end to end, prepared and managed model artifacts in cloud storage, and implemented API tests with pytest as well as basic load testing.
 
 **Student 250779** was responsible for implementing the training loop, data preprocessing, DVC, integration with Hydra and Lightning as well as connecting the training to wandb to collect metrics and logs from training runs, setting up cloud project (IAM), bucket storage, cloudbuild.
 
