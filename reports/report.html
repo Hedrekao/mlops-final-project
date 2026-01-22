@@ -99,7 +99,7 @@ will check the repositories and the code to verify your answers.</p>
 <h3>Question 1</h3>
 <blockquote>
 <p><strong>Enter the group number you signed up on <learn.inside.dtu.dk></strong></p>
-<p>Answer: </p>
+<p>Answer:</p>
 </blockquote>
 <p>103</p>
 <h3>Question 2</h3>
@@ -107,7 +107,7 @@ will check the repositories and the code to verify your answers.</p>
 <p><strong>Enter the study number for each member in the group</strong></p>
 <p>Example:</p>
 <p><em>sXXXXXX, sXXXXXX, sXXXXXX</em></p>
-<p>Answer: </p>
+<p>Answer:</p>
 </blockquote>
 <p>s250695, s253811, s250778, s250779</p>
 <h3>Question 3</h3>
@@ -120,7 +120,7 @@ will check the repositories and the code to verify your answers.</p>
 <em>package to do ... and ... in our project</em>.</p>
 <p>Answer:</p>
 </blockquote>
-<p>We didn't really used any other libraries than the ones covered in the course.</p>
+<p>We didn't really use any other libraries than the ones covered in the course.</p>
 <h2>Coding environment</h2>
 <blockquote>
 <p>In the following section we are interested in learning more about you local development environment. This includes
@@ -136,7 +136,7 @@ how you managed dependencies, the structure of your code and how you managed cod
 <p>Answer: uv sync</p>
 </blockquote>
 <p>We decided to use the uv to manage our dependencies. This was motivated by a great developer experience that comes from using uv as well as its speed when it comes to resolving dependencies. The version of python that should be used with the project is stored in <code>.python-version</code> file.
-Dependencies and their versions are stored automatically in <code>pyproject.toml</code> if added through <code>uv add &lt;dep-nam&gt;</code>, developers are also able to modify <code>pyproject.toml</code> themselves. A new team meber to get an exact copy of dev environment would just need to simply run (given of course that they
+Dependencies and their versions are stored automatically in <code>pyproject.toml</code> if added through <code>uv add &lt;dep-nam&gt;</code>, developers are also able to modify <code>pyproject.toml</code> themselves. A new team member to get an exact copy of dev environment would just need to simply run (given of course that they
 have uv already installed on their machine) <code>uv sync</code>.</p>
 <h3>Question 5</h3>
 <blockquote>
@@ -151,7 +151,7 @@ have uv already installed on their machine) <code>uv sync</code>.</p>
 </blockquote>
 <p>We have used the template showcased during the lecture that also includes all the files related to agentic programming. We have used most of the folders except the <code>notebooks</code> as we started working on actual python files from the start. Additionally, we have added a <code>scripts</code> directory.
 This directory contains the python scripts that should be suppose to run from command line, without being core of actual application, specifically a script that is located there is being called during CI to generate a comment in each pull request showcasing various data statistics.
-The overall structure of the product is centered around <code>src</code> containing the actual code of application, <code>data</code> containing both raw and processed data as well as dvc info, <code>models</code> containing output of training runs, <code>dockerfiles</code> with Dockefiles, <code>.github</code> with all the CI related files and <code>tests</code> containing all the test</p>
+The overall structure of the product is centered around <code>src</code> containing the actual code of application, <code>data</code> containing both raw and processed data as well as dvc info, <code>models</code> containing output of training runs, <code>dockerfiles</code> with Dockerfiles, <code>.github</code> with all the CI related files and <code>tests</code> containing all the test</p>
 <h3>Question 6</h3>
 <blockquote>
 <p><strong>Did you implement any rules for code quality and format? What about typing and documentation? Additionally,</strong>
@@ -175,7 +175,7 @@ corporate and increase the quality of your code.</p>
 <p><strong>How many tests did you implement and what are they testing in your code?</strong></p>
 <p>Answer:</p>
 </blockquote>
-<p>The test suite contains five focused tests covering data, model, and API. Data tests validate the dataset and datamodule load preprocessed tensors, correct lengths, tensor shapes, and dtypes. Model tests verify model construction, a forward pass, and a single optimization step to ensure training paths work. API tests exercise key endpoints (responses and status codes) to catch integration regressions. Together they provide smoke-level coverage of critical pipelines.</p>
+<p>The test suite contains 27 focused tests covering data, model, and API. Data tests validate dataset construction, tokenization, train/val/test splits, tensor shapes, and dtypes. Model tests verify model construction, forward pass, and optimizer configuration. API tests cover key endpoints including root, health, and predict with edge cases and integration scenarios. Together they provide comprehensive smoke-level coverage of critical pipelines.</p>
 <h3>Question 8</h3>
 <blockquote>
 <p><strong>What is the total code coverage (in percentage) of your code? If your code had a code coverage of 100% (or close</strong>
@@ -183,10 +183,12 @@ corporate and increase the quality of your code.</p>
 <p>Recommended answer length: 100-200 words.</p>
 <p>Answer:</p>
 </blockquote>
-<p>The total code coverage of code is 58%, which includes all our source code apart from tests folder. We are far from 100% coverage of our code, but even 100 % test coverage does not guarantee a bug free code, it is only as good as the tests.</p>
-<p>Code coverage measures how much code is executed during testing, not whether that code is correct. A test can run a line of code without actually validating its behavior. For example, a test could execute a function that returns an incorrect value but still count toward coverage if the assertion doesn't catch it. Additionally, coverage metrics often miss edge cases, integration failures between components, and production-specific issues like concurrency bugs or memory leaks that only manifest under load.</p>
-<p>Even at 100% coverage, critical gaps remain. First, we may not test all logical branches (e.g., error handling paths in exception cases). Second, tests can be poorly written, they may test implementation details rather than behavior, making the code fragile to refactoring. Third, coverage doesn't measure test quality; a test that passes trivially counts the same as a rigorous one.</p>
-<p>In our project, our 58% coverage focuses on critical paths: data loading, model construction, training steps, and API endpoints. We prioritized testing high-risk areas (transformers, GCS integration, FastAPI routes) over lower-risk utility functions. This pragmatic approach provides confidence in core functionality while acknowledging that perfect coverage would yield diminishing returns. To truly ensure reliability, we complement coverage with manual testing, code reviews, integration tests, and production monitoring to catch issues that unit tests miss.</p>
+<p>The total code coverage of code is 58%, which includes all our source code apart from tests folder.
+We are far from 100% coverage of our code, but even 100% test coverage does not guarantee a bug free code, it is only as good as the tests.
+Code coverage measures how much code is executed during testing, not whether that code is correct.
+A test can run a line of code without actually validating its behavior.
+For example, a test could execute a function that returns an incorrect value but still count toward coverage if the assertion doesn't catch it.
+Additionally, coverage metrics often miss edge cases, integration failures between components, and production-specific issues like concurrency bugs or memory leaks that only manifest under load.</p>
 <h3>Question 9</h3>
 <blockquote>
 <p><strong>Did you workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and</strong>
@@ -197,9 +199,11 @@ corporate and increase the quality of your code.</p>
 <em>addition to the main branch. To merge code we ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>We made use of both branches and pull requests throughout our project, following a feature branch workflow to maintain code quality and facilitate collaboration. Each major task or feature (e.g., CI/CD setup, API development, monitoring implementation) had its own dedicated branch created from main. Team members worked independently on their branches, committing regularly without blocking others.</p>
-<p>When a feature was complete, we opened a pull request to main. Every PR required at least one approval from another team member and had to pass all automated checks: unit tests via pytest, linting with ruff, pre-commit hooks, and Docker builds. This gating mechanism prevented broken or non-compliant code from reaching production. Code reviews caught logic errors, style violations, and architectural issues before merge, improving overall code quality and knowledge sharing across the team.</p>
-<p>Branch protection rules on main enforced these requirements, no direct pushes were allowed, and PRs could not merge until reviews and CI passed. This workflow scaled well for our team of four: it eliminated merge conflicts through isolation, ensured every commit to main was tested and reviewed, and created a clear audit trail of who changed what and why. Additionally, it allowed parallel development; team members could work on independent features simultaneously without interfering with each other, significantly improving our development velocity.</p>
+<p>We made use of both branches and pull requests throughout our project, following a feature branch workflow to maintain code quality and facilitate collaboration.
+Each major task or feature (e.g., CI/CD setup, API development, monitoring implementation) had its own dedicated branch created from main.
+Team members worked independently on their branches, committing regularly without blocking others.</p>
+<p>When a feature was complete, we opened a pull request to main. Every PR required at least one approval and had to pass all automated checks: unit tests, linting. This gating mechanism prevented broken or non-compliant code from reaching production.
+Code reviews caught logic errors, style violations, and architectural issues before merge, improving overall code quality and knowledge sharing across the team.</p>
 <h3>Question 10</h3>
 <blockquote>
 <p><strong>Did you use DVC for managing data in your project? If yes, then how did it improve your project to have version</strong>
@@ -210,8 +214,9 @@ corporate and increase the quality of your code.</p>
 <em>pipeline</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>We did make of use of DVC in the following way: instead of storing raw dataset (before preprocessing) we use data versioning for it. The actual dataset is stored in bucket in Google Cloud. In our actual case we only had single version of dataset as it was a simple synthethic dataset from kaggle.
-But DVC was still a nice improvement of life, as all the team members could simply pull the data when running project. Additionally, if we were to train the model in the cloud we would also not have to care about making sure the data is the we could simply pull it. The versioning of data itself would be more useful
+<p>We did make use of DVC in the following way: instead of storing raw dataset (before preprocessing) we use data versioning for it. The actual dataset is stored in bucket in Google Cloud. In our actual case we only had single version of dataset as it was a simple synthetic dataset from kaggle.
+But DVC was still a nice improvement of life, as all the team members could simply pull the data when running project. Additionally, if we trained the model in the cloud, we wouldn’t have to worry about managing the data locally - we could simply pull it directly when needed.
+The versioning of data itself would be more useful
 if we would version actual preprocessed datasets, we would have different versions containing different feature preprocessing and that way we would be able to very easily swap between version.</p>
 <h3>Question 11</h3>
 <blockquote>
@@ -273,7 +278,15 @@ be on the same git commit as when experiment was run.</p>
 <em>As seen in the second image we are also tracking ... and ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>--- question 14 fill here ---</p>
+<p>As already mentioned due to the superb model performance we haven't experimented that much, but we still were saving information to W&amp;B during training runs.
+We were saving entire Hydra configs that were used during the run so that, if someone would like to reproduce the result it would have been obvious what were the parameters of training.
+When it comes to measures we were tracking train/val loss graph (at each step), number of epochs, accuracy (at the end of epoch), as well as f1 score for val dataset.
+After the training evaluation on test set was also saved. All the logs that were printed to console during the training were also automatically saved to W&amp;B
+These metrics allow us to get understanding of how the training run performs, is our model overfitting/underfitting, we can compare different sets of runs.</p>
+<p>In Hydra W&amp;B config we also exposed an option to save the best model checkpoints (weights) as artifacts, that way they could be then loaded automatically in serving deployment directly from there, using a specific tag (we have not in the end implemented this integration and instead just put model weights directly to the bucket).
+Moreover, there is an option to log model parameters and their gradients during the training, that could be useful information during debugging process if we suspect that we might have issue with vanishing/exploding gradients and there is some numeric unstability.</p>
+<p><img alt="Image 1" src="figures/wandb1.png" />
+<img alt="Image 2" src="figures/wandb2.png" /></p>
 <h3>Question 15</h3>
 <blockquote>
 <p><strong>Docker is an important tool for creating containerized applications. Explain how you used docker in your</strong>
@@ -284,11 +297,14 @@ be on the same git commit as when experiment was run.</p>
 <em>training docker image: <code>docker run trainer:latest lr=1e-3 batch_size=64</code>. Link to docker file: <weblink></em></p>
 <p>Answer:</p>
 </blockquote>
-<p>We developed three Docker images: one for API/inference deployment, one for training, and one for FastAPI serving.
+<p>We developed two Docker images: one for API/inference deployment, one for training.
 To run the API image locally:
 <code>docker build -f dockerfiles/api.dockerfile -t postings-api:latest . &amp;&amp; docker run -p 8000:8000 postings-api:latest</code>.
 The training image (<code>train.dockerfile</code>) installs all dependencies including GPU support (PyTorch, Lightning) and can be invoked with <code>docker run -v $(pwd)/data:/app/data postings-train:latest</code>. Both images are built automatically via
-Cloud Build in our CI/CD pipeline (<code>cloudbuild_containers.yaml</code>) and pushed to Artifact Registry. <code>docker-compose.yml</code> enables local multi-container orchestration for development.</p>
+Cloud Build in our CI/CD pipeline (<code>cloudbuild_containers.yaml</code>) and pushed to Artifact Registry.
+Additionally of pushing API image to the registry, there is a trigger that deploys it automatically to CloudRun
+<code>docker-compose.yml</code> enables local multi-container orchestration for development.</p>
+<p>Link to serving image: <a href="https://github.com/Hedrekao/mlops-final-project/blob/main/dockerfiles/api.dockerfile">here</a></p>
 <h3>Question 16</h3>
 <blockquote>
 <p><strong>When running into bugs while trying to run your experiments, how did you perform debugging? Additionally, did you</strong>
@@ -324,7 +340,7 @@ Cloudbuild automatically builds containers using Dockerfiles and stores them in 
 <em>using a custom container: ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Because we did not train our model in the cloud but rather locally and used the CloudRun for hosting the inference server, the only moment we had briefly encountered Compute engine
+<p>Because we did not train our model in the cloud but rather locally and used the CloudRun for hosting the inference server, the only moment we had briefly encountered the Compute engine
 was when building docker images in the CloudBuild as it spins up a vm to run the building process. If we were to fully utilize the Compute engine we would most likely try to get quota for the GPU virtual machines
 as that would allow us to run even faster training. Also many Google Cloud services try to abstract the fact that they use Compute Engine under the hood providing more user friendly interfaces.</p>
 <h3>Question 19</h3>
@@ -359,7 +375,7 @@ as that would allow us to run even faster training. Also many Google Cloud servi
 <em>was because ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>We were planning to train our model in the cloud, however in the end we decided not to for a few following reasons. First and foremost, the problem and dataset that we selected for this project (natural langugage processing task)
+<p>We were planning to train our model in the cloud, however in the end we decided not to for a few following reasons. First and foremost, the problem and dataset that we selected for this project (natural language processing task)
 were not problem for a pretrained transformer from hugging face with the classifier head attached on top of it. Because of that our first experiment result in a model that aced through benchmarks both on train and test sets. Because of that we had no reason to do multiple
 of experiments which would probably force to use cloud for time efficiency. Moreover, the actual training time was also not a terrible one, with around 30 minutes. Training in the cloud would be required if the project involved automatic/on-demand retraining of the model
 using new data, however in our simplified case we just used a static dataset from kaggle.</p>
@@ -429,7 +445,7 @@ using new data, however in our simplified case we just used a static dataset fro
 <p>Answer:</p>
 </blockquote>
 <p>As it currently stands the total cloud cost up-to-date is 13.5$, where the actually the majority of that (over 13$) comes from container registry vulnerability scanning feature that we enabled for test.
-The second most expensive service is the CloudRun used for hosting inference server, which for now only costed 0.4$. In general working in the cloud went pretty smoothly, thanks to the guides that we had available in the course.
+The second most expensive service is the CloudRun used for hosting inference server, which for now only cost 0.4$. In general working in the cloud went pretty smoothly, thanks to the guides that we had available in the course.
 But unfortunately, the UI and UX of GoogleCloud is horrible. Things are hidden, slow, unintuitive, unresponsive, costs are also not that easy to estimate right away. Additionally, debugging issues that only appear in the cloud
 is not fun at all, but this is the reality we live in and we have to deal with it :)</p>
 <h3>Question 28</h3>
@@ -455,13 +471,16 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 <em>Whenever we commit code and push to GitHub, it auto triggers ... and ... . From there the diagram shows ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>Answer:</p>
 <p><img alt="MLOPS Architecture" src="figures/MLOPS_diagram.png" /></p>
-<p>Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring. <strong>Local development</strong>: Team members clone the repository, set up the environment with <code>uv sync</code>, and develop code Tests (pytest) validate data loading, model training, and API functionality locally before pushing.</p>
+<p>Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring.</p>
+<p><strong>Local development</strong>: Team members clone the repository, set up the environment with <code>uv sync</code>, pull data using DVC and develop code.
+Tests (pytest) validate data loading, model training, and API functionality locally before pushing. Additionally there is pre-commit hook to check linting before even pushing the commit.</p>
 <p><strong>Data versioning</strong>: Training data (<code>data/raw/fake_real_job_postings_3000x25.csv</code>) is versioned using DVC with remote storage configured at <code>gs://jop-postings-mlops-data/dvc-store</code>. This allows team members to track dataset changes while keeping the Git repository lightweight.</p>
-<p><strong>CI/CD pipeline</strong>: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, and pre-commit hooks. If all checks pass and the PR is approved, code merges to main, automatically triggering Cloud Build to construct Docker images (training, API, FastAPI) and push them to Google Artifact Registry.</p>
+<p><strong>CI/CD pipeline</strong>: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, data statistics workflow (to check quality of data). If all checks pass and the PR is approved, code merges to main,
+automatically triggering Cloud Build to construct Docker images (training, API) and push them to Google Artifact Registry, serving image is also automatically deployed to CloudRun.</p>
 <p><strong>Cloud deployment</strong>: The API image is deployed to Cloud Run, which auto-scales based on traffic. The Prometheus sidecar is configured on the Cloud Run service for Google Cloud Monitoring for real-time dashboards and alerting.</p>
-<p><strong>Data flow</strong>: Input requests hit the <code>/predict</code> endpoint, which loads the PyTorch model and returns predictions. Every prediction is logged as JSON to Google Cloud Storage (<code>predictions/prediction_*.json</code>).</p>
+<p><strong>Data flow</strong>: Input requests hit the <code>/predict</code> endpoint, which loads the PyTorch model and returns predictions. Every prediction is logged as JSON to Google Cloud Storage (<code>predictions/prediction_*.json</code>).
+There is also a dashboard available to can be used to check against data drift</p>
 <h3>Question 30</h3>
 <blockquote>
 <p><strong>Discuss the overall struggles of the project. Where did you spend most time and what did you do to overcome these</strong>
@@ -471,7 +490,11 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 <em>The biggest challenges in the project was using ... tool to do ... . The reason for this was ...</em></p>
 <p>Answer:</p>
 </blockquote>
-<p>--- question 30 fill here ---</p>
+<p>We believe that one of the biggest challenges in the project was wrapping your head around using cloud and orientating yourself in the madness of Google Cloud console. However, in the end it was just a matter of going through options, finding an order of things to do and following great course instructions.
+Another problem was related to failing CI workflows, for some of them it was matter of certain permissions, but in general the idea of having to push code to check if the workflow works well was quite annoying.</p>
+<p>When it comes to actual writing code, we haven't had any major blockers and issues, everything was going rather smoothly and if anyone had some problem there were always other people willing to help</p>
+<p>To sum up we think that the biggest amount of time we spend in the project was on various integrations and more specifically making sure that all of them work nicely together, whether it was automatic cloud deployments with CI pipeline with DVC and so on. Entire MLOPS consists of many moving elements,
+that in the end just need to work together. We think the best way to work through these issues is simply to split work into small tasks and do one by another, without trying to create entire infrastructure in one go.</p>
 <h3>Question 31</h3>
 <blockquote>
 <p><strong>State the individual contributions of each team member. This is required information from DTU, because we need to</strong>
@@ -487,8 +510,9 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 Answer:</p>
 </blockquote>
 <p>// Please add all of you here your contributions</p>
-<p><strong>Student s253811</strong>  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, <code>/monitoring/report</code> endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.</p>
-<p><strong>Student s250695</strong>  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.</p>
-<p><strong>Student s250778</strong> was responsible for creating the project description in the main README.md. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application with Docker, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing using Locust.</p>
+<p><strong>Student s253811</strong>  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru), and the complete monitoring system (Prometheus metrics instrumentation, <code>/monitoring/report</code> endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks.</p>
+<p><strong>Student s250695</strong>  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.</p>
+<p><strong>Student s250778</strong> was responsible for creating the project description and implementing the inference and deployment part of the system. This included designing and implementing the FastAPI inference service, handling model and tokenizer loading from cloud storage with fallback logic, and containerizing the application. Also, deployed the service to Cloud Run, tested the deployment end to end, prepared and managed model artifacts in cloud storage, and implemented API tests with pytest as well as basic load testing.</p>
+<p><strong>Student 250779</strong> was responsible for implementing the training loop, data preprocessing, DVC, integration with Hydra and Lightning as well as connecting the training to wandb to collect metrics and logs from training runs, setting up cloud project (IAM), bucket storage, cloudbuild.</p>
 <p>All members contributed to code reviews, testing, and documentation.
-We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.</p>
+We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating parts of code.</p>
