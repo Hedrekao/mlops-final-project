@@ -91,7 +91,7 @@ will check the repositories and the code to verify your answers.
 * [x] Create a FastAPI application that can do inference using your model (M22)
 * [x] Deploy your model in GCP using either Functions or Run as the backend (M23)
 * [x] Write API tests for your application and setup continues integration for these (M24)
-* [ ] Load test your application (M24)
+* [x] Load test your application (M24)
 * [ ] Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25)
 * [ ] Create a frontend for your API (M26)
 
@@ -121,7 +121,7 @@ will check the repositories and the code to verify your answers.
 ### Question 1
 > **Enter the group number you signed up on <learn.inside.dtu.dk>**
 >
-> Answer: 103
+> Answer: 
 
 103
 
@@ -133,7 +133,7 @@ will check the repositories and the code to verify your answers.
 >
 > *sXXXXXX, sXXXXXX, sXXXXXX*
 >
-> Answer: s250695, s253811, s250778, s250779
+> Answer: 
 
 s250695, s253811, s250778, s250779
 
@@ -315,7 +315,15 @@ Formatting and linting are enforced in CI (fail on ruff errors) and pre-commit i
 >
 > Answer:
 
---- question 12 fill here ---
+We used Hydra for experiment configuration management. Configuration files are stored in configs/ with subdirectories for model/, trainer/, and data/ settings. To run an experiment with default config:
+
+uv run python src/postings_classifier/train.py
+
+To override specific parameters from the command line:
+
+uv run python src/postings_classifier/train.py trainer.lr=1e-4 trainer.batch_size=32 trainer.max_epochs=20
+
+Hydra automatically merges configs, validates values, and logs all parameters to outputs/ for full reproducibility.
 
 ### Question 13
 
@@ -482,7 +490,7 @@ using new data, however in our simplified case we just used a static dataset fro
 >
 > Answer:
 
---- question 23 fill here ---
+We built a FastAPI service (`postings_classifier.api`) with endpoints `/`, `/health`, `/predict`, `/monitoring/stats`, `/monitoring/report`, and `/metrics` (Prometheus). On first use it lazily loads a DistilBERT checkpoint from `models/checkpoints/` or a GCS-mounted path (envs: `MODEL_CHECKPOINT`, `HF_MODEL_PATH`, `HF_HOME`, and `TRANSFORMERS_OFFLINE=1`); if nothing is available it falls back to a simple rule-based predictor so the API still responds. `/predict` returns label + score and logs each request in the background to a GCS bucket for monitoring/drift checks. We added Prometheus counters/histograms for request counts, errors, latency, and input length. Health reports whether the model is loaded and the last load error. Monitoring endpoints read recent predictions (GCS first, local CSV fallback) and render a lightweight HTML report for quick drift/volume inspection.
 
 ### Question 24
 
@@ -498,7 +506,13 @@ using new data, however in our simplified case we just used a static dataset fro
 >
 > Answer:
 
---- question 24 fill here ---
+Yes. Locally we run `uv run uvicorn postings_classifier.api:app --reload` for dev. For cloud we containerized the FastAPI app with `dockerfiles/api.dockerfile`, built via Cloud Build, pushed to Artifact Registry, and deployed to Cloud Run (europe-west1, CPU, autoscaling). The service mounts our GCS bucket `jop-postings-mlops-data` at `/gcs/jop-postings-mlops-data` and reads env vars: `MODEL_CHECKPOINT` (pointing to checkpoint in GCS), `HF_MODEL_PATH`, `HF_HOME`, and `TRANSFORMERS_OFFLINE=1` to force local-only HuggingFace loads. To invoke the deployed service we POST JSON to `/predict`:
+
+curl -X POST "https://postings-classifier-api-948592557572.europe-west1.run.app/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "We are hiring a data scientist with Python and NLP experience."}'
+
+Returns `{"label":"fake","score":0.799...}`. Health, monitoring stats/report, and Prometheus metrics are on `/health`, `/monitoring/stats`, `/monitoring/report`, `/metrics`.
 
 ### Question 25
 
@@ -513,7 +527,9 @@ using new data, however in our simplified case we just used a static dataset fro
 >
 > Answer:
 
---- question 25 fill here ---
+For unit testing we used pytest with FastAPI's TestClient. We wrote 20 tests in `tests/test_api.py` covering: root/health/predict endpoints (response structure, status codes), edge cases (empty text, whitespace, unicode, special characters, long text), valid label/score ranges, and integration scenarios. All 20 tests passed successfully.
+
+For load testing we used Locust against the deployed Cloud Run service. We simulated 10 concurrent users with weighted endpoints: `/predict` (weight 10), `/` (weight 2), `/health` (weight 1), `/monitoring/stats` (weight 1), `/monitoring/report` variants (weight 1). Over 3 minutes, we generated 664 total requests with 0 failures. Key results: `/predict` handled 447 requests at avg 86.94ms (50th percentile 77ms, 95th percentile 150ms), achieving 2.58 RPS. Root and health endpoints averaged 33ms and 30ms respectively. Throughput reached 3.83 RPS peak. The API never crashed and gracefully handled all concurrent traffic, though `/monitoring/stats` is slower (7271ms avg) due to GCS reads. Overall the deployment is stable and responsive for the core prediction workload.
 
 ### Question 26
 
@@ -567,7 +583,7 @@ is not fun at all, but this is the reality we live in and we have to deal with i
 >
 > Answer:
 
---- question 28 fill here ---
+We did not add any extra features beyond the required scope. Instead, we focused on making sure the core parts of the project were solid and worked well end to end. We chose to skip optional additions like a frontend or more advanced infrastructure, as our main priority was building a stable and reliable pipeline rather than adding extra components.
 
 ### Question 29
 
@@ -630,9 +646,12 @@ Our system architecture follows a complete MLOps pipeline from local development
 > Answer:
 
 // Please add all of you here your contributions
+
 **Student s253811**  responsible for implementing profiling (PyTorch Profiler integration), logging infrastructure (loguru setup across modules), and the complete monitoring system (Prometheus metrics instrumentation, `/monitoring/report` endpoint, Cloud Monitoring integration, prediction logging to GCS). Also some necessary fixes to GitHub Actions workflows and other code maintenance tasks throughout the project.
 
 **Student s250695**  was responsible for implementing and maintaining the continuous integration pipeline. This included setting up GitHub Actions workflows with multi-OS and multi-Python version testing, configuring pytest with coverage reporting, integrating ruff linting and formatting checks, and setting up pre-commit hooks to enforce code quality standards before commits. Additionally, implemented distributed data loading optimization following the DTU MLOps M29 module, including multi-worker PyTorch DataLoader configuration with GPU memory optimization , performance benchmarking across different worker counts, and dataloader best practices in the data.py module to improve training pipeline performance.
+
+**Student s250778** was responsible for creating the project description in the main README.md. Designed and implemented the FastAPI inference service, including model loading from cloud storage with fallback logic. Led the most cloud deployment pipeline: set up Cloud Run deployment, containerized the application with Docker, and tested the build process end-to-end. Modified the model and tokenizer loading to work efficiently in a cloud environment with GCS bucket integration and set up environment variables for cloud storage paths. Uploaded model checkpoints and HuggingFace model files to the GCS bucket. Implemented API testing with pytest and performed load testing using Locust.
 
 All members contributed to code reviews, testing, and documentation.
 We used GitHub Copilot for code completion and ChatGPT/GitHub Copilot Chat for debugging, explaining error messages, and generating code.
