@@ -1,0 +1,6 @@
+enabled: true
+project: "mlops-course"
+entity: "deep-learning-dtu"  # Your W&B username, or override with WANDB_ENTITY env var
+log_model: true  # Upload best checkpoint as artifact
+watch_model: false  # Set true to log gradients/parameters (slower)
+tags: []

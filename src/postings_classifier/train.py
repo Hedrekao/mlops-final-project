@@ -1,12 +1,15 @@
+import os
 from pathlib import Path
 
 import hydra
 from loguru import logger
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.profilers import AdvancedProfiler, PyTorchProfiler
 from torch.profiler import ProfilerActivity, schedule, tensorboard_trace_handler
+import wandb
 
 from postings_classifier.data import JobPostingsDataModule
 from postings_classifier.logging_utils import log_config, setup_logging
@@ -54,8 +57,50 @@ def _build_profiler(cfg: DictConfig) -> AdvancedProfiler | PyTorchProfiler | Non
     raise ValueError(f"Unsupported profiler type: {profiler_type}")
 
 
+def _build_wandb_logger(cfg: DictConfig, save_dir: str | None = None) -> WandbLogger | None:
+    """Create a WandbLogger if enabled in config."""
+    if not cfg.wandb.enabled:
+        logger.info("W&B logging disabled")
+        return None
+
+    wandb_logger = WandbLogger(
+        project=cfg.wandb.project,
+        entity=cfg.wandb.entity or os.getenv("WANDB_ENTITY"),
+        tags=list(cfg.wandb.tags) if cfg.wandb.tags else None,
+        config=OmegaConf.to_container(cfg, resolve=True),
+        log_model=False,  # We handle artifact upload manually for more control
+        save_dir=save_dir,  # Important: use original dir, not Hydra's output dir
+    )
+
+    logger.info("W&B logging enabled - project: {}, entity: {}", cfg.wandb.project, cfg.wandb.entity)
+    return wandb_logger
+
+
+def _upload_checkpoint_artifact(
+    checkpoint_path: str,
+    wandb_logger: WandbLogger,
+    artifact_name: str = "model-checkpoint",
+    artifact_type: str = "model",
+    aliases: list[str] | None = None,
+) -> None:
+    """Upload a checkpoint file as a W&B artifact."""
+    if not checkpoint_path or not Path(checkpoint_path).exists():
+        logger.warning("Checkpoint path not found, skipping artifact upload: {}", checkpoint_path)
+        return
+
+    aliases = aliases or ["latest"]
+    artifact = wandb.Artifact(name=artifact_name, type=artifact_type)
+    artifact.add_file(checkpoint_path, name=Path(checkpoint_path).name)
+
+    wandb_logger.experiment.log_artifact(artifact, aliases=aliases)
+    logger.info("Uploaded checkpoint artifact '{}' with aliases {}", artifact_name, aliases)
+
+
 @hydra.main(config_path="../../configs", config_name="config", version_base=None)
 def train(cfg: DictConfig) -> float:
+    # Store original working directory before Hydra changes it
+    original_cwd = hydra.utils.get_original_cwd()
+
     setup_logging(level="INFO")
     log_config(cfg)
 
@@ -118,6 +163,11 @@ def train(cfg: DictConfig) -> float:
     callbacks = [checkpoint_callback, early_stopping_callback]
 
     profiler = _build_profiler(cfg)
+    wandb_logger = _build_wandb_logger(cfg, save_dir=original_cwd)
+
+    # Watch model gradients/parameters if enabled
+    if wandb_logger and cfg.wandb.watch_model:
+        wandb_logger.watch(model, log="all", log_freq=100)
 
     trainer = L.Trainer(
         max_epochs=cfg.trainer.max_epochs,
@@ -129,6 +179,7 @@ def train(cfg: DictConfig) -> float:
         default_root_dir=cfg.trainer.default_root_dir,
         callbacks=callbacks,
         profiler=profiler,
+        logger=wandb_logger,
     )
 
     logger.info("Starting training for {} epochs", cfg.trainer.max_epochs)
@@ -145,8 +196,21 @@ def train(cfg: DictConfig) -> float:
         last_path if last_path else "N/A (best checkpoint is from final epoch)",
     )
 
+    # Upload best checkpoint to W&B as artifact
+    if wandb_logger and cfg.wandb.log_model:
+        _upload_checkpoint_artifact(
+            checkpoint_path=checkpoint_callback.best_model_path,
+            wandb_logger=wandb_logger,
+            artifact_name="model-checkpoint",
+            aliases=["best", "latest"],
+        )
+
+    # Finish W&B run
+    if wandb_logger:
+        wandb.finish()
+
     val_acc = trainer.callback_metrics.get("val_acc", 0.0)
-    return val_acc.item() if hasattr(val_acc, "item") else val_acc
+    return float(val_acc.item() if hasattr(val_acc, "item") else val_acc)
 
 
 if __name__ == "__main__":
