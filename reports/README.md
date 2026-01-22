@@ -373,11 +373,15 @@ be on the same git commit as when experiment was run.
 >
 > Answer:
 
-We developed three Docker images: one for API/inference deployment, one for training, and one for FastAPI serving.
+We developed three Docker images: one for API/inference deployment, one for training.
 To run the API image locally:
 `docker build -f dockerfiles/api.dockerfile -t postings-api:latest . && docker run -p 8000:8000 postings-api:latest`.
 The training image (`train.dockerfile`) installs all dependencies including GPU support (PyTorch, Lightning) and can be invoked with `docker run -v $(pwd)/data:/app/data postings-train:latest`. Both images are built automatically via
-Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry. `docker-compose.yml` enables local multi-container orchestration for development.
+Cloud Build in our CI/CD pipeline (`cloudbuild_containers.yaml`) and pushed to Artifact Registry.
+Additionally of pushing API image to the registry, there is a trigger that deployes it automatically to CloudRun
+`docker-compose.yml` enables local multi-container orchestration for development.
+
+Link to serving image: [here](https://github.com/Hedrekao/mlops-final-project/blob/main/dockerfiles/api.dockerfile)
 
 ### Question 16
 
@@ -600,19 +604,22 @@ We did not add any extra features beyond the required scope. Instead, we focused
 >
 > Answer:
 
-Answer:
-
 ![MLOPS Architecture](figures/MLOPS_diagram.png)
 
-Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring. **Local development**: Team members clone the repository, set up the environment with `uv sync`, and develop code Tests (pytest) validate data loading, model training, and API functionality locally before pushing.
+Our system architecture follows a complete MLOps pipeline from local development to cloud deployment and monitoring.
+
+**Local development**: Team members clone the repository, set up the environment with `uv sync`, pull data using DVC and develop code.
+Tests (pytest) validate data loading, model training, and API functionality locally before pushing. Additionally there is pre-commit hook to check linting before even pushing the commit.
 
 **Data versioning**: Training data (`data/raw/fake_real_job_postings_3000x25.csv`) is versioned using DVC with remote storage configured at `gs://jop-postings-mlops-data/dvc-store`. This allows team members to track dataset changes while keeping the Git repository lightweight.
 
-**CI/CD pipeline**: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, and pre-commit hooks. If all checks pass and the PR is approved, code merges to main, automatically triggering Cloud Build to construct Docker images (training, API, FastAPI) and push them to Google Artifact Registry.
+**CI/CD pipeline**: When code is pushed to GitHub, GitHub Actions triggers automated workflows: unit tests, linting, data statistics workflow (to check quality of data). If all checks pass and the PR is approved, code merges to main,
+automatically triggering Cloud Build to construct Docker images (training, API) and push them to Google Artifact Registry, serving image is also automatically deployed to CloudRun.
 
 **Cloud deployment**: The API image is deployed to Cloud Run, which auto-scales based on traffic. The Prometheus sidecar is configured on the Cloud Run service for Google Cloud Monitoring for real-time dashboards and alerting.
 
 **Data flow**: Input requests hit the `/predict` endpoint, which loads the PyTorch model and returns predictions. Every prediction is logged as JSON to Google Cloud Storage (`predictions/prediction_*.json`).
+There is also a dashboard available to can be used to check against data drift
 
 
 ### Question 30
