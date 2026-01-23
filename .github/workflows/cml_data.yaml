@@ -51,7 +51,7 @@ jobs:
 
       - name: Setup CML
         if: github.event_name == 'pull_request'
-        uses: iterative/setup-cml@v2
+        uses: iterative/setup-cml@v3
 
       - name: Generate and post CML report
         if: github.event_name == 'pull_request'
